@@ -12,33 +12,33 @@ export class InventoryAlertRuleController {
 
     @Get()
     findAll() {
-        return this.service.findAll();
+        return this.service.findAllInventoryAlertRules();
     }
 
     @Get(":id")
     findById(@Param("id") id: string) {
-        return this.service.findById(id);
+        return this.service.findByIdInventoryAlertRule(id);
     }
 
     @Post()
     @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
     create(@Body() dto: CreateInventoryAlertRuleDto) {
-        return this.service.create(dto);
+        return this.service.createInventoryAlertRule(dto);
     }
 
     @Patch(":id")
     @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
     update(@Param("id") id: string, @Body() dto: UpdateInventoryAlertRuleDto) {
-        return this.service.update(id, dto);
+        return this.service.updateInventoryAlertRule(id, dto);
     }
 
     @Delete(":id")
     remove(@Param("id") id: string) {
-        return this.service.remove(id);
+        return this.service.removeInventoryAlertRule(id);
     }
 
     @Delete()
     removeAll() {
-        return this.service.removeAll();
+        return this.service.removeAllInventoryAlertRules();
     }
 }
