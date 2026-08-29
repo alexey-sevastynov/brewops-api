@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Document } from "mongoose";
 import type { KavappInventoryItemType } from "../../../integrations/kavapp/types/inventory/kavapp-inventory-item";
+import { kavappInventoryTypes } from "../../../integrations/kavapp/constants/kavapp-inventory-types";
 
 export type InventoryAlertRuleDocument = InventoryAlertRule & Document;
 
@@ -9,7 +10,15 @@ export class InventoryAlertRule {
     createdAt?: Date;
     updatedAt?: Date;
 
-    @Prop({ required: true, enum: ["ingredient", "cup", "product", "kitchen"] })
+    @Prop({
+        required: true,
+        enum: [
+            kavappInventoryTypes.ingredient,
+            kavappInventoryTypes.cup,
+            kavappInventoryTypes.product,
+            kavappInventoryTypes.kitchen,
+        ],
+    })
     itemType!: KavappInventoryItemType;
 
     @Prop({ required: true })
@@ -29,4 +38,5 @@ export class InventoryAlertRule {
 }
 
 export const InventoryAlertRuleSchema = SchemaFactory.createForClass(InventoryAlertRule);
+
 InventoryAlertRuleSchema.index({ itemType: 1, kavappItemId: 1 }, { unique: true });

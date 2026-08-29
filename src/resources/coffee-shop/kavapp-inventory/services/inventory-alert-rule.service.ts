@@ -14,15 +14,15 @@ export class InventoryAlertRuleService {
         private readonly kavappClient: KavappClient,
     ) {}
 
-    async findAll() {
+    async findAllInventoryAlertRules() {
         return this.model.find().sort({ itemType: 1, name: 1 }).exec();
     }
 
-    findById(id: string) {
+    findByIdInventoryAlertRule(id: string) {
         return this.model.findById(id).exec();
     }
 
-    async create(dto: CreateInventoryAlertRuleDto) {
+    async createInventoryAlertRule(dto: CreateInventoryAlertRuleDto) {
         const existingRule = await this.model.exists({
             itemType: dto.itemType,
             kavappItemId: dto.kavappItemId,
@@ -43,26 +43,35 @@ export class InventoryAlertRuleService {
         });
     }
 
-    async update(id: string, dto: UpdateInventoryAlertRuleDto) {
+    async updateInventoryAlertRule(id: string, dto: UpdateInventoryAlertRuleDto) {
         const rule = await this.model
             .findByIdAndUpdate(id, { $set: dto }, { new: true, runValidators: true })
             .exec();
-        if (!rule) throw new NotFoundException("InventoryAlertRule not found");
+
+        if (!rule) {
+            throw new NotFoundException(errorMessages.notFound.replace("{0}", "Inventory alert rule"));
+        }
+
         return rule;
     }
 
-    async remove(id: string) {
+    async removeInventoryAlertRule(id: string) {
         const deleted = await this.model.findByIdAndDelete(id).exec();
-        if (!deleted) throw new NotFoundException("InventoryAlertRule not found");
+
+        if (!deleted) {
+            throw new NotFoundException(errorMessages.notFound.replace("{0}", "Inventory alert rule"));
+        }
+
         return { success: true };
     }
 
-    async removeAll() {
+    async removeAllInventoryAlertRules() {
         const result = await this.model.deleteMany().exec();
+
         return { deletedCount: result.deletedCount };
     }
 
-    async getRules(): Promise<InventoryAlertRuleDocument[]> {
+    async getInventoryAlertRules(): Promise<InventoryAlertRuleDocument[]> {
         return this.model.find().exec();
     }
 }
