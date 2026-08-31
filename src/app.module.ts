@@ -6,7 +6,6 @@ import { DatabaseModule } from "./infra/database/database.module";
 import { AiModule } from "./infra/ai/ai.module";
 import { TaskModule } from "./resources/task/task.module";
 import { UserModule } from "./resources/user/user.module";
-import { AddressModule } from "./resources/address/address.module";
 import { AuthModule } from "./resources/auth/auth.module";
 import { PasswordResetModule } from "./resources/password-reset/password-reset.module";
 import { EmployeeModule } from "./resources/coffee-shop/employee/employee.module";
@@ -18,6 +17,9 @@ import { FacilityExpenseModule } from "./resources/coffee-shop/facility-expense/
 import { OwnerWithdrawalModule } from "./resources/coffee-shop/owner-withdrawal/owner-withdrawal.module";
 import { TelegramModule } from "./infra/telegram/telegram.module";
 import { KavappInventoryModule } from "./resources/coffee-shop/kavapp-inventory/kavapp-inventory.module";
+import { WorkspaceModule } from "./resources/workspace/workspace.module";
+import { WorkspaceMemberModule } from "./resources/workspace-member/workspace-member.module";
+import { CoffeeShopModule } from "./resources/coffee-shop/coffee-shop.module";
 
 @Module({
     imports: [
@@ -27,7 +29,6 @@ import { KavappInventoryModule } from "./resources/coffee-shop/kavapp-inventory/
         TelegramModule,
         TaskModule,
         UserModule,
-        AddressModule,
         AuthModule,
         PasswordResetModule,
         EmployeeModule,
@@ -38,6 +39,9 @@ import { KavappInventoryModule } from "./resources/coffee-shop/kavapp-inventory/
         FacilityExpenseModule,
         OwnerWithdrawalModule,
         KavappInventoryModule,
+        WorkspaceModule,
+        WorkspaceMemberModule,
+        CoffeeShopModule,
     ],
     controllers: [AppController],
     providers: [AppService],

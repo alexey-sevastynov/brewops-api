@@ -6,7 +6,10 @@ export type DailyReportDocument = DailyReport & Document;
 
 @Schema({ timestamps: true })
 export class DailyReport {
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "CoffeeShop" })
+    coffeeShopId!: mongoose.Types.ObjectId;
+
+    @Prop({ required: true })
     date!: Date;
 
     @Prop({ required: true })
@@ -56,3 +59,5 @@ export class DailyReport {
 }
 
 export const DailyReportSchema = SchemaFactory.createForClass(DailyReport);
+
+DailyReportSchema.index({ coffeeShopId: 1, date: 1 }, { unique: true });

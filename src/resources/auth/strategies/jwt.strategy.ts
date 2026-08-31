@@ -10,8 +10,8 @@ import { errorMessages } from "../../../common/constants/error-messages";
 import { envKeys } from "../../../common/enums/infra/env-key";
 import { getRequiredEnv } from "../../../common/utils/infra/env-functions";
 import { User } from "../../user/user-schema";
-import { userRoleKeys } from "../../user/enums/user-role-key";
 import { userStatusKeys } from "../../user/enums/user-status-key";
+import { WorkspaceMember } from "../../workspace-member/workspace-member-schema";
 
 const jwtExtractor = ExtractJwt as unknown as {
     fromAuthHeaderAsBearerToken: () => (request: unknown) => string | null;
@@ -22,6 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
         configService: ConfigService,
         @InjectModel(User.name) private readonly userModel: Model<User>,
+        @InjectModel(WorkspaceMember.name) private readonly workspaceMemberModel: Model<WorkspaceMember>,
     ) {
         super({
             jwtFromRequest: jwtExtractor.fromAuthHeaderAsBearerToken(),
@@ -35,10 +36,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             throw new UnauthorizedException(errorMessages.invalidToken);
         }
 
-        if (payload.isGuest) {
-            return this.createGuestUser(payload);
-        }
-
         const user = await this.userModel.findById(payload.id);
 
         if (!user) {
@@ -49,24 +46,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             throw new UnauthorizedException(errorMessages.accountBlocked);
         }
 
+        const workspaceMember = await this.workspaceMemberModel.findOne({ userId: user._id }).exec();
+
         return {
             mongoId: user._id.toString(),
             userId: user.userId,
             userName: user.userName,
-            userRole: user.userRole,
             isVerified: user.isVerified,
-            isGuest: false,
-        };
-    }
-
-    private createGuestUser(payload: AuthJwtPayload): AuthenticatedUser {
-        return {
-            mongoId: payload.id,
-            userId: payload.userId ?? "",
-            userName: payload.userName ?? "Guest",
-            userRole: userRoleKeys.guest,
-            isVerified: true,
-            isGuest: true,
+            workspaceId: workspaceMember?.workspaceId.toString(),
+            workspaceRole: workspaceMember?.role,
         };
     }
 }

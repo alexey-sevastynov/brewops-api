@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import mongoose, { Document } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { type ExpenseReportType, expenseReportTypes } from "./enums/expense-report-type";
 
@@ -6,6 +6,9 @@ export type ExpenseReportDocument = ExpenseReport & Document;
 
 @Schema({ timestamps: true })
 export class ExpenseReport {
+    @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "CoffeeShop" })
+    coffeeShopId!: mongoose.Types.ObjectId;
+
     @Prop({ required: true })
     title!: string;
 
@@ -29,3 +32,5 @@ export class ExpenseReport {
 }
 
 export const ExpenseReportSchema = SchemaFactory.createForClass(ExpenseReport);
+
+ExpenseReportSchema.index({ coffeeShopId: 1 });

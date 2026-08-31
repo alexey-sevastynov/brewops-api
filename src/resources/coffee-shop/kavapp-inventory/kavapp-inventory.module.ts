@@ -11,13 +11,19 @@ import { InventoryAlertRule, InventoryAlertRuleSchema } from "./inventory-alert-
 import { InventoryAlertRuleService } from "./services/inventory-alert-rule.service";
 import { InventoryAlertRuleController } from "./controllers/inventory-alert-rule.controller";
 
+import { CoffeeShop, CoffeeShopEntitySchema } from "../coffee-shop-schema";
+
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: KavappInventory.name, schema: KavappInventorySchema }]),
-        MongooseModule.forFeature([{ name: InventoryAlertRule.name, schema: InventoryAlertRuleSchema }]),
+        MongooseModule.forFeature([
+            { name: KavappInventory.name, schema: KavappInventorySchema },
+            { name: InventoryAlertRule.name, schema: InventoryAlertRuleSchema },
+            { name: CoffeeShop.name, schema: CoffeeShopEntitySchema },
+        ]),
         KavappModule,
         TelegramModule,
     ],
+
     controllers: [KavappInventoryController, InventoryAlertRuleController],
     providers: [KavappInventoryService, KavappSyncService, InventoryAlertService, InventoryAlertRuleService],
     exports: [KavappInventoryService, KavappSyncService, InventoryAlertService, InventoryAlertRuleService],

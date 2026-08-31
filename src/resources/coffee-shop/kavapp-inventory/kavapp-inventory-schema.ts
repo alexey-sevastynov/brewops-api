@@ -1,11 +1,14 @@
+import mongoose, { Document } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
 import { KavappInventoryItem } from "../../../integrations/kavapp/types/inventory/kavapp-inventory-item";
 
 export type KavappInventorySnapshotDocument = KavappInventory & Document;
 
 @Schema({ timestamps: true })
 export class KavappInventory {
+    @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "CoffeeShop" })
+    coffeeShopId!: mongoose.Types.ObjectId;
+
     @Prop({ required: true, default: () => new Date() })
     syncDate!: Date;
 
@@ -23,3 +26,5 @@ export class KavappInventory {
 }
 
 export const KavappInventorySchema = SchemaFactory.createForClass(KavappInventory);
+
+KavappInventorySchema.index({ coffeeShopId: 1 });

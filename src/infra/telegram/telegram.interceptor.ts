@@ -1,4 +1,12 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler, Logger, Optional } from "@nestjs/common";
+import {
+    Injectable,
+    NestInterceptor,
+    ExecutionContext,
+    CallHandler,
+    Logger,
+    Optional,
+    BadRequestException,
+} from "@nestjs/common";
 import { Observable } from "rxjs";
 import { concatMap } from "rxjs/operators";
 import { Reflector } from "@nestjs/core";
@@ -7,10 +15,12 @@ import { telegramNotifyMetadata } from "./telegram.decorator";
 import { TelegramService } from "./telegram.service";
 import { telegramActions } from "./constants";
 import { type TelegramNotifyOptions } from "./types";
+import { type CoffeeShopDocument } from "../../resources/coffee-shop/coffee-shop-schema";
 
 interface ExpressRequest {
     params: Record<string, string>;
     body: Record<string, unknown>;
+    coffeeShop?: CoffeeShopDocument;
     [key: string]: unknown;
 }
 
@@ -37,6 +47,7 @@ export class TelegramInterceptor implements NestInterceptor<unknown, unknown> {
         return next.handle().pipe(
             concatMap(async (response) => {
                 const responseObj = response as Record<string, unknown> | null;
+
                 try {
                     await this.handleNotification(options, request, responseObj);
                 } catch (err) {
@@ -73,10 +84,18 @@ export class TelegramInterceptor implements NestInterceptor<unknown, unknown> {
 
         const data = response || request.body;
 
+        const coffeeShop = request.coffeeShop;
+
+        const chatId = coffeeShop?.telegramChatId;
+
+        if (!chatId) {
+            throw new BadRequestException("Telegram чат не налаштований для цієї кав'ярні.");
+        }
+
         if (options.action === telegramActions.create) {
             if (!data) return;
             const messageFn = this.resolveMessageFn(options);
-            await this.telegramService.handleCreate(options.resource, data, messageFn);
+            await this.telegramService.handleCreate(chatId, options.resource, data, messageFn);
         } else if (options.action === telegramActions.update) {
             if (!resourceId) return;
             const messageFn = this.resolveMessageFn(options);

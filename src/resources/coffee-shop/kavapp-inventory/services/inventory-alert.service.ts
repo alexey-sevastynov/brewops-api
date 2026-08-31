@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
-import { getRequiredEnv } from "../../../../common/utils/infra/env-functions";
-import { envKeys } from "../../../../common/enums/infra/env-key";
+import { BadRequestException, Injectable } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+
 import { TelegramService } from "../../../../infra/telegram/telegram.service";
 import { KavappInventoryItem } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-item";
 import { KavappInventoryResponse } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-response";
@@ -12,6 +13,7 @@ import { InventoryAlertRuleDocument } from "../inventory-alert-rule-schema";
 import { InventoryAlertRuleService } from "./inventory-alert-rule.service";
 import { inventoryAlertIgnoreNames } from "../constants/inventory-alert-rules";
 import { InventoryAlertState, inventoryAlertStates } from "../constants/alert-states";
+import { CoffeeShop, CoffeeShopDocument } from "../../coffee-shop-schema";
 
 interface InventoryAlert {
     inventoryItem: KavappInventoryItem;
@@ -23,14 +25,16 @@ export class InventoryAlertService {
     constructor(
         private readonly telegramService: TelegramService,
         private readonly ruleService: InventoryAlertRuleService,
+        @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShopDocument>,
     ) {}
 
     async checkAndNotify(
+        coffeeShopId: string,
         inventory: KavappInventoryResponse,
         previousSnapshot: KavappInventory | null,
         forceTest = false,
     ) {
-        const inventoryAlertRules = await this.ruleService.getInventoryAlertRules();
+        const inventoryAlertRules = await this.ruleService.getInventoryAlertRules(coffeeShopId);
         const rulesByKey = new Map(
             inventoryAlertRules.map((rule) => [this.ruleKey(rule.itemType, rule.kavappItemId), rule]),
         );
@@ -83,16 +87,23 @@ export class InventoryAlertService {
             ) {
                 hasNewAlert = true;
             }
-
-            if (!forceTest && !hasNewAlert) return;
-
-            const message =
-                negativeAlerts.length || lowStockAlerts.length
-                    ? this.formatAlertMessage(negativeAlerts, lowStockAlerts, forceTest)
-                    : this.formatEmptyMessage(forceTest);
-
-            await this.telegramService.sendMessage(getRequiredEnv(envKeys.telegramChatId), message);
         }
+
+        if (!forceTest && !hasNewAlert) return;
+
+        const message =
+            negativeAlerts.length || lowStockAlerts.length
+                ? this.formatAlertMessage(negativeAlerts, lowStockAlerts, forceTest)
+                : this.formatEmptyMessage(forceTest);
+
+        const shop = await this.coffeeShopModel.findById(coffeeShopId).exec();
+        const chatId = shop?.telegramChatId;
+
+        if (!chatId) {
+            throw new BadRequestException("Telegram чат не налаштований для цієї кав'ярні.");
+        }
+
+        await this.telegramService.sendMessage(chatId, message);
     }
 
     private isNegativeInventoryAlert(

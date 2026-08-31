@@ -13,13 +13,17 @@ import { kavappEndpoints } from "../constants/kavapp-endpoints";
 
 @Injectable()
 export class KavappClient {
-    private cachedToken: string | null = null;
+    private cachedTokens = new Map<string, string>();
     constructor(private readonly httpService: HttpService) {}
 
-    async login() {
+    async login(coffeeShopId: string, email?: string, pass?: string) {
+        if (!email || !pass) {
+            throw new HttpException("Kavapp email and password are required", HttpStatus.BAD_REQUEST);
+        }
+
         const kavappLoginRequest: KavappLoginRequest = {
-            email: getRequiredEnv(envKeys.kavappEmail),
-            pass: getRequiredEnv(envKeys.kavappPassword),
+            email,
+            pass,
         };
 
         try {
@@ -34,9 +38,10 @@ export class KavappClient {
                 throw new HttpException(kavappErrorMessages.authenticationFailed, HttpStatus.UNAUTHORIZED);
             }
 
-            this.cachedToken = kavappLoginResponse.data.data.token;
+            const token = kavappLoginResponse.data.data.token;
+            this.cachedTokens.set(coffeeShopId, token);
 
-            return this.cachedToken;
+            return token;
         } catch (error) {
             if (error instanceof HttpException) throw error;
 
@@ -46,25 +51,22 @@ export class KavappClient {
         }
     }
 
-    async getInventory(pointId?: string) {
+    async getInventory(coffeeShopId: string, email?: string, pass?: string, pointId?: string) {
         const defaultPointId = "1";
-        const activePointId = pointId ?? defaultPointId;
+        const activePointId = pointId || getRequiredEnv(envKeys.kavappPointId) || defaultPointId;
 
-        if (!this.cachedToken) await this.login();
+        let token = this.cachedTokens.get(coffeeShopId);
+        if (!token) token = await this.login(coffeeShopId, email, pass);
 
         try {
             try {
-                return await this.fetchInventory(this.cachedToken!, activePointId);
+                return await this.fetchInventory(token, activePointId);
             } catch (error) {
                 if (this.isUnauthorized(error)) {
-                    this.cachedToken = null;
+                    this.cachedTokens.delete(coffeeShopId);
+                    token = await this.login(coffeeShopId, email, pass);
 
-                    await this.login();
-
-                    const kavappInventoryResponse = await this.fetchInventory(
-                        this.cachedToken!,
-                        activePointId,
-                    );
+                    const kavappInventoryResponse = await this.fetchInventory(token, activePointId);
 
                     return kavappInventoryResponse;
                 }
@@ -80,11 +82,11 @@ export class KavappClient {
         }
     }
 
-    async getCatalog(): Promise<KavappCatalogItem[]> {
-        if (!this.cachedToken) await this.login();
+    async getCatalog(coffeeShopId: string, email?: string, pass?: string): Promise<KavappCatalogItem[]> {
+        let token = this.cachedTokens.get(coffeeShopId);
+        if (!token) token = await this.login(coffeeShopId, email, pass);
 
         try {
-            const token = this.cachedToken!;
             const catalog = await Promise.all([
                 this.fetchCatalog(kavappEndpoints.catalog.product, "product", token),
                 this.fetchCatalog(kavappEndpoints.catalog.cup, "cup", token),
@@ -94,9 +96,9 @@ export class KavappClient {
             return catalog.flat();
         } catch (error) {
             if (this.isUnauthorized(error)) {
-                this.cachedToken = null;
-                await this.login();
-                return this.getCatalog();
+                this.cachedTokens.delete(coffeeShopId);
+                token = await this.login(coffeeShopId, email, pass);
+                return this.getCatalog(coffeeShopId, email, pass);
             }
 
             throw new HttpException(kavappErrorMessages.inventoryFetchFailed, HttpStatus.BAD_GATEWAY, {

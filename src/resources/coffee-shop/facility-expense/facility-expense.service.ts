@@ -12,12 +12,12 @@ export class FacilityExpenseService {
         private readonly model: Model<FacilityExpenseDocument>,
     ) {}
 
-    findAll() {
-        return this.model.find().sort({ createdAt: -1 });
+    findAllFacilityExpense(coffeeShopId: string) {
+        return this.model.find({ coffeeShopId }).sort({ createdAt: -1 });
     }
 
-    async findById(id: string) {
-        const expense = await this.model.findById(id);
+    async findByIdFacilityExpense(id: string, coffeeShopId: string) {
+        const expense = await this.model.findOne({ _id: id, coffeeShopId });
 
         if (!expense) {
             throw new NotFoundException("FacilityExpense not found");
@@ -26,15 +26,18 @@ export class FacilityExpenseService {
         return expense;
     }
 
-    async create(dto: CreateFacilityExpenseDto) {
+    async createFacilityExpense(dto: CreateFacilityExpenseDto, coffeeShopId: string) {
         const data = this.normalize(dto);
-        const created = await this.model.create(data);
+        const created = await this.model.create({
+            ...data,
+            coffeeShopId,
+        });
 
         return created;
     }
 
-    async update(id: string, dto: UpdateFacilityExpenseDto) {
-        const expense = await this.model.findById(id);
+    async updateFacilityExpense(id: string, dto: UpdateFacilityExpenseDto, coffeeShopId: string) {
+        const expense = await this.model.findOne({ _id: id, coffeeShopId });
 
         if (!expense) {
             throw new NotFoundException("FacilityExpense not found");
@@ -50,8 +53,8 @@ export class FacilityExpenseService {
         return expense.save();
     }
 
-    async delete(id: string) {
-        const deleted = await this.model.findByIdAndDelete(id);
+    async deleteFacilityExpense(id: string, coffeeShopId: string) {
+        const deleted = await this.model.findOneAndDelete({ _id: id, coffeeShopId });
 
         if (!deleted) {
             throw new NotFoundException("FacilityExpense not found");
@@ -60,8 +63,8 @@ export class FacilityExpenseService {
         return { success: true };
     }
 
-    async deleteAll() {
-        const result = await this.model.deleteMany();
+    async deleteAllFacilityExpenses(coffeeShopId: string) {
+        const result = await this.model.deleteMany({ coffeeShopId });
         return { deletedCount: result.deletedCount };
     }
 

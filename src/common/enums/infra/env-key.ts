@@ -15,13 +15,11 @@ export const envKeys = {
     nodeMailerPassword: "NODEMAILER_PASSWORD",
     mailProvider: "MAIL_PROVIDER",
     telegramBotToken: "TELEGRAM_BOT_TOKEN",
-    telegramChatId: "TELEGRAM_CHAT_ID",
     openRouterApiKey: "OPENROUTER_API_KEY",
     kavappApiUrl: "KAVAPP_API_URL",
-    kavappEmail: "KAVAPP_EMAIL",
-    kavappPassword: "KAVAPP_PASSWORD",
     kavappOldApiUrl: "KAVAPP_OLD_API_URL",
     kavappPointId: "KAVAPP_POINT_ID",
+    encryptionSecret: "ENCRYPTION_SECRET",
 } as const;
 
 export type EnvKey = (typeof envKeys)[keyof typeof envKeys];

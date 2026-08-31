@@ -14,5 +14,6 @@ export const errorMessages = {
     unableToSendVerificationEmail:
         "We couldn't send you a verification email. Please try again later or contact support.",
     insufficientPermissions: "You do not have permission to access this resource.",
+    coffeeShopPlanLimitReached: "You reached the coffee shop limit for the {0} plan.",
     accountBlocked: "Your account has been blocked.",
 };

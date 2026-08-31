@@ -12,12 +12,12 @@ export class OwnerWithdrawalService {
         private readonly model: Model<OwnerWithdrawalDocument>,
     ) {}
 
-    findAll() {
-        return this.model.find().sort({ withdrawalDate: -1, createdAt: -1 });
+    findAllOwnerWithdrawal(coffeeShopId: string) {
+        return this.model.find({ coffeeShopId }).sort({ withdrawalDate: -1, createdAt: -1 });
     }
 
-    async findById(id: string) {
-        const withdrawal = await this.model.findById(id);
+    async findByIdOwnerWithdrawal(id: string, coffeeShopId: string) {
+        const withdrawal = await this.model.findOne({ _id: id, coffeeShopId });
 
         if (!withdrawal) {
             throw new NotFoundException("OwnerWithdrawal not found");
@@ -26,12 +26,15 @@ export class OwnerWithdrawalService {
         return withdrawal;
     }
 
-    create(dto: CreateOwnerWithdrawalDto) {
-        return this.model.create(dto);
+    createOwnerWithdrawal(dto: CreateOwnerWithdrawalDto, coffeeShopId: string) {
+        return this.model.create({
+            ...dto,
+            coffeeShopId,
+        });
     }
 
-    async update(id: string, dto: UpdateOwnerWithdrawalDto) {
-        const withdrawal = await this.model.findByIdAndUpdate(id, dto, { new: true });
+    async updateOwnerWithdrawal(id: string, dto: UpdateOwnerWithdrawalDto, coffeeShopId: string) {
+        const withdrawal = await this.model.findOneAndUpdate({ _id: id, coffeeShopId }, dto, { new: true });
 
         if (!withdrawal) {
             throw new NotFoundException("OwnerWithdrawal not found");
@@ -40,8 +43,8 @@ export class OwnerWithdrawalService {
         return withdrawal;
     }
 
-    async delete(id: string) {
-        const deleted = await this.model.findByIdAndDelete(id);
+    async deleteOwnerWithdrawal(id: string, coffeeShopId: string) {
+        const deleted = await this.model.findOneAndDelete({ _id: id, coffeeShopId });
 
         if (!deleted) {
             throw new NotFoundException("OwnerWithdrawal not found");
@@ -50,8 +53,8 @@ export class OwnerWithdrawalService {
         return { success: true };
     }
 
-    async deleteAll() {
-        const result = await this.model.deleteMany();
+    async deleteAllOwnerWithdrawals(coffeeShopId: string) {
+        const result = await this.model.deleteMany({ coffeeShopId });
         return { deletedCount: result.deletedCount };
     }
 }

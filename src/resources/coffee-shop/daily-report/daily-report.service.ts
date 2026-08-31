@@ -21,20 +21,25 @@ export class DailyReportService {
         private readonly employeeModel: Model<EmployeeDocument>,
     ) {}
 
-    findAllDailyReport() {
-        return this.dailyModel.find().sort({ date: -1 }).populate(dailyReportProps.employee);
+    findAllDailyReport(coffeeShopId: string) {
+        return this.dailyModel.find({ coffeeShopId }).sort({ date: -1 }).populate(dailyReportProps.employee);
     }
 
-    async findByIdDailyReport(id: string) {
-        const report = await this.dailyModel.findById(id).populate(dailyReportProps.employee);
+    async findByIdDailyReport(id: string, coffeeShopId: string) {
+        const report = await this.dailyModel
+            .findOne({ _id: id, coffeeShopId })
+            .populate(dailyReportProps.employee);
 
         if (!report) throw new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name));
 
         return report;
     }
 
-    async createDailyReport(createDailyReportDto: CreateDailyReportDto) {
-        const employee = await this.employeeModel.findById(createDailyReportDto.employee);
+    async createDailyReport(createDailyReportDto: CreateDailyReportDto, coffeeShopId: string) {
+        const employee = await this.employeeModel.findOne({
+            _id: createDailyReportDto.employee,
+            coffeeShopId,
+        });
 
         if (!employee) {
             throw new NotFoundException(errorMessages.notFound.replace("{0}", Employee.name));
@@ -47,6 +52,7 @@ export class DailyReportService {
 
         const dailyReport = await new this.dailyModel({
             ...createDailyReportDto,
+            coffeeShopId,
             ...calculatedDailyReportFields,
         }).save();
 
@@ -56,8 +62,8 @@ export class DailyReportService {
             .orFail(() => new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name)));
     }
 
-    async updateDailyReport(id: string, updateDailyReportDto: UpdateDailyReportDto) {
-        const dailyModel = await this.dailyModel.findById(id);
+    async updateDailyReport(id: string, updateDailyReportDto: UpdateDailyReportDto, coffeeShopId: string) {
+        const dailyModel = await this.dailyModel.findOne({ _id: id, coffeeShopId });
 
         if (!dailyModel) {
             throw new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name));
@@ -65,7 +71,7 @@ export class DailyReportService {
 
         Object.assign(dailyModel, updateDailyReportDto);
 
-        const employee = await this.employeeModel.findById(dailyModel.employee);
+        const employee = await this.employeeModel.findOne({ _id: dailyModel.employee, coffeeShopId });
 
         if (!employee) {
             throw new NotFoundException(errorMessages.notFound.replace("{0}", Employee.name));
@@ -81,14 +87,14 @@ export class DailyReportService {
             .orFail(() => new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name)));
     }
 
-    async deleteDailyReport(id: string) {
-        const deleted = await this.dailyModel.findByIdAndDelete(id);
+    async deleteDailyReport(id: string, coffeeShopId: string) {
+        const deleted = await this.dailyModel.findOneAndDelete({ _id: id, coffeeShopId });
 
         if (!deleted) throw new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name));
     }
 
-    async deleteAllDailyReports() {
-        const result = await this.dailyModel.deleteMany();
+    async deleteAllDailyReports(coffeeShopId: string) {
+        const result = await this.dailyModel.deleteMany({ coffeeShopId });
 
         return { deletedCount: result.deletedCount };
     }

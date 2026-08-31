@@ -1,4 +1,4 @@
-import { Document } from "mongoose";
+import mongoose, { Document } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 
 export type InventoryAuditDocument = InventoryAudit & Document;
@@ -7,6 +7,9 @@ export type InventoryAuditDocument = InventoryAudit & Document;
     timestamps: true,
 })
 export class InventoryAudit {
+    @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "CoffeeShop" })
+    coffeeShopId!: mongoose.Types.ObjectId;
+
     @Prop({ required: true })
     title!: string;
 
@@ -27,3 +30,5 @@ export class InventoryAudit {
 }
 
 export const InventoryAuditSchema = SchemaFactory.createForClass(InventoryAudit);
+
+InventoryAuditSchema.index({ coffeeShopId: 1 });

@@ -9,6 +9,9 @@ export type EmployeeDocument = Employee & Document;
 export class Employee implements WithObjectId {
     _id!: mongoose.Types.ObjectId;
 
+    @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "CoffeeShop" })
+    coffeeShopId!: mongoose.Types.ObjectId;
+
     @Prop({ required: true })
     name!: string;
 
@@ -35,3 +38,5 @@ export class Employee implements WithObjectId {
 }
 
 export const EmployeeSchema = SchemaFactory.createForClass(Employee);
+
+EmployeeSchema.index({ coffeeShopId: 1 });

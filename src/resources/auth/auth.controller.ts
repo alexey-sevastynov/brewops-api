@@ -18,9 +18,4 @@ export class AuthController {
     signIn(@Body() signInDto: SignInDto) {
         return this.authService.signIn(signInDto);
     }
-
-    @Post("guest")
-    guestLogin() {
-        return this.authService.signInAsGuest();
-    }
 }
