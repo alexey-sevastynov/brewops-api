@@ -20,6 +20,10 @@ export class UpdateCoffeeShopDto {
 
     @IsOptional()
     @IsString()
+    telegramChatId?: string;
+
+    @IsOptional()
+    @IsString()
     kavappEmail?: string;
 
     @IsOptional()

@@ -3,32 +3,34 @@ import { InventoryAuditService } from "./inventory-audit.service";
 import { CreateInventoryAuditDto } from "./dto/create-inventory-audit-dto";
 import { UpdateInventoryAuditDto } from "./dto/update-inventory-audit-dto";
 import { CheckPermission } from "../../../resources/auth/decorators/check-permission.decorator";
+import { resourceNames } from "../../../common/constants/resource-names";
+import { permissionActions } from "../../../common/enums/permission-action";
 
 @Controller("coffee-shops/:coffeeShopId/inventory-audits")
 export class InventoryAuditController {
     constructor(private readonly service: InventoryAuditService) {}
 
     @Get()
-    @CheckPermission("inventory-audits", "read")
+    @CheckPermission(resourceNames.inventoryAudits, permissionActions.read)
     findAll(@Param("coffeeShopId") coffeeShopId: string) {
         return this.service.findAllInventoryAudit(coffeeShopId);
     }
 
     @Get(":id")
-    @CheckPermission("inventory-audits", "read")
+    @CheckPermission(resourceNames.inventoryAudits, permissionActions.read)
     findById(@Param("coffeeShopId") coffeeShopId: string, @Param("id") id: string) {
         return this.service.findByIdInventoryAudit(id, coffeeShopId);
     }
 
     @Post()
-    @CheckPermission("inventory-audits", "write")
+    @CheckPermission(resourceNames.inventoryAudits, permissionActions.write)
     @UsePipes(new ValidationPipe())
     create(@Param("coffeeShopId") coffeeShopId: string, @Body() dto: CreateInventoryAuditDto) {
         return this.service.createInventoryAudit(dto, coffeeShopId);
     }
 
     @Patch(":id")
-    @CheckPermission("inventory-audits", "write")
+    @CheckPermission(resourceNames.inventoryAudits, permissionActions.write)
     @UsePipes(new ValidationPipe())
     update(
         @Param("coffeeShopId") coffeeShopId: string,
@@ -39,13 +41,13 @@ export class InventoryAuditController {
     }
 
     @Delete(":id")
-    @CheckPermission("inventory-audits", "delete")
+    @CheckPermission(resourceNames.inventoryAudits, permissionActions.delete)
     delete(@Param("coffeeShopId") coffeeShopId: string, @Param("id") id: string) {
         return this.service.deleteInventoryAudit(id, coffeeShopId);
     }
 
     @Delete()
-    @CheckPermission("inventory-audits", "delete")
+    @CheckPermission(resourceNames.inventoryAudits, permissionActions.delete)
     deleteAll(@Param("coffeeShopId") coffeeShopId: string) {
         return this.service.deleteAllInventoryAudits(coffeeShopId);
     }

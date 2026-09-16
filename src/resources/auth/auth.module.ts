@@ -20,9 +20,11 @@ import {
     WorkspaceMemberSchema,
 } from "../../resources/workspace-member/workspace-member-schema";
 import { CoffeeShop, CoffeeShopEntitySchema } from "../../resources/coffee-shop/coffee-shop-schema";
+import { CoffeeShopAccessModule } from "../../resources/coffee-shop-access/coffee-shop-access.module";
 
 @Module({
     imports: [
+        CoffeeShopAccessModule,
         MongooseModule.forFeature([
             { name: User.name, schema: UserSchema },
             { name: WorkspaceMember.name, schema: WorkspaceMemberSchema },

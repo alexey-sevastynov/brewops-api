@@ -54,34 +54,64 @@ export class AuthService {
 
             let primaryWorkspaceId: string | undefined;
 
-            if (auth.invitationToken) {
-                // Secure path: validate via the unique token from the invite email
-                const invitation = await db
-                    .collection<{
-                        _id: mongoose.Types.ObjectId;
-                        workspaceId: mongoose.Types.ObjectId;
-                        role: WorkspaceRoleKey;
-                        permissions: string[];
-                        email: string;
-                        status: string;
-                    }>("workspaceinvitations")
-                    .findOne({
-                        token: auth.invitationToken,
-                        status: "PENDING",
-                    });
+            const invitationOrFilters: Array<Record<string, unknown>> = [
+                { email: emailNormalized, status: "PENDING" },
+            ];
 
-                if (invitation && invitation.email === emailNormalized) {
-                    await this.workspaceMemberService.createMember(
+            if (auth.invitationToken) {
+                invitationOrFilters.unshift({ token: auth.invitationToken, status: "PENDING" });
+            }
+
+            const pendingInvitations = await db
+                .collection<{
+                    _id: mongoose.Types.ObjectId;
+                    workspaceId: mongoose.Types.ObjectId;
+                    role: WorkspaceRoleKey;
+                    permissions: string[];
+                    coffeeShopAccess?: Array<{
+                        coffeeShopId: mongoose.Types.ObjectId;
+                        role?: string;
+                        permissions: string[];
+                    }>;
+                    email: string;
+                    status: string;
+                }>("workspaceinvitations")
+                .find({ $or: invitationOrFilters })
+                .toArray();
+
+            for (const invitation of pendingInvitations) {
+                const existingMember = await this.workspaceMemberService.findByUserAndWorkspace(
+                    user._id.toString(),
+                    invitation.workspaceId.toString(),
+                );
+
+                if (!existingMember) {
+                    const member = await this.workspaceMemberService.createMember(
                         user._id.toString(),
                         invitation.workspaceId.toString(),
                         invitation.role,
                         invitation.permissions,
                     );
 
-                    await db
-                        .collection("workspaceinvitations")
-                        .updateOne({ _id: invitation._id }, { $set: { status: "ACCEPTED" } });
+                    if (invitation.coffeeShopAccess?.length) {
+                        await db.collection("coffeeshopaccesses").insertMany(
+                            invitation.coffeeShopAccess.map((item) => ({
+                                memberId: member._id,
+                                coffeeShopId: item.coffeeShopId,
+                                role: item.role || workspaceRoleKeys.custom,
+                                permissions: item.permissions || [],
+                                createdAt: new Date(),
+                                updatedAt: new Date(),
+                            })),
+                        );
+                    }
+                }
 
+                await db
+                    .collection("workspaceinvitations")
+                    .updateOne({ _id: invitation._id }, { $set: { status: "ACCEPTED" } });
+
+                if (!primaryWorkspaceId) {
                     primaryWorkspaceId = invitation.workspaceId.toString();
                 }
             }

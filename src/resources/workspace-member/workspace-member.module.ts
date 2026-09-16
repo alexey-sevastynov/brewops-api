@@ -5,11 +5,13 @@ import { WorkspaceMemberService } from "./workspace-member.service";
 import { WorkspaceInvitation, WorkspaceInvitationSchema } from "./workspace-invitation.schema";
 import { User, UserSchema } from "../user/user-schema";
 import { Workspace, WorkspaceSchema } from "../workspace/workspace-schema";
+import { CoffeeShopAccessModule } from "../coffee-shop-access/coffee-shop-access.module";
 
 import { WorkspaceMemberController } from "./workspace-member.controller";
 
 @Module({
     imports: [
+        CoffeeShopAccessModule,
         MongooseModule.forFeature([
             { name: WorkspaceMember.name, schema: WorkspaceMemberSchema },
             { name: WorkspaceInvitation.name, schema: WorkspaceInvitationSchema },

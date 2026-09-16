@@ -6,14 +6,14 @@ import { CreateInventoryAlertRuleDto } from "../dto/create-inventory-alert-rule.
 import { UpdateInventoryAlertRuleDto } from "../dto/update-inventory-alert-rule.dto";
 import { InventoryAlertRule, InventoryAlertRuleDocument } from "../inventory-alert-rule-schema";
 import { errorMessages } from "../../../../common/constants/error-messages";
-import { CoffeeShop, CoffeeShopDocument } from "../../coffee-shop-schema";
+import { CoffeeShop } from "../../coffee-shop-schema";
 
 @Injectable()
 export class InventoryAlertRuleService {
     constructor(
         @InjectModel(InventoryAlertRule.name) private readonly model: Model<InventoryAlertRuleDocument>,
         private readonly kavappClient: KavappClient,
-        @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShopDocument>,
+        @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShop>,
     ) {}
 
     async findAllInventoryAlertRules(coffeeShopId: string) {

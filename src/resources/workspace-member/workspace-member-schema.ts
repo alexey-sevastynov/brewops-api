@@ -1,8 +1,8 @@
-import mongoose, { Document } from "mongoose";
+import mongoose, { type HydratedDocument } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { type WorkspaceRoleKey, workspaceRoleKeys } from "./enums/workspace-role-key";
 
-export type WorkspaceMemberDocument = WorkspaceMember & Document;
+export type WorkspaceMemberDocument = HydratedDocument<WorkspaceMember>;
 
 @Schema({ timestamps: true })
 export class WorkspaceMember {
@@ -12,7 +12,7 @@ export class WorkspaceMember {
     @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "Workspace" })
     workspaceId!: mongoose.Types.ObjectId;
 
-    @Prop({ required: true, default: workspaceRoleKeys.owner, enum: workspaceRoleKeys })
+    @Prop({ required: true, type: String, default: workspaceRoleKeys.owner, enum: workspaceRoleKeys })
     role!: WorkspaceRoleKey;
 
     @Prop({ type: [String], default: [] })

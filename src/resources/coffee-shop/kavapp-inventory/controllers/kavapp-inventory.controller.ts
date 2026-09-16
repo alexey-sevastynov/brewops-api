@@ -4,6 +4,8 @@ import { KavappInventoryService } from "../services/kavapp-inventory.service";
 import { KavappSyncService } from "../services/kavapp-sync.service";
 import { KavappCatalogItem } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-item";
 import { CheckPermission } from "../../../../resources/auth/decorators/check-permission.decorator";
+import { resourceNames } from "../../../../common/constants/resource-names";
+import { permissionActions } from "../../../../common/enums/permission-action";
 
 @Controller("coffee-shops/:coffeeShopId/kavapp")
 export class KavappInventoryController {
@@ -13,7 +15,7 @@ export class KavappInventoryController {
     ) {}
 
     @Get("inventory")
-    @CheckPermission("kavapp", "read")
+    @CheckPermission(resourceNames.kavapp, permissionActions.read)
     async getInventory(
         @Param("coffeeShopId") coffeeShopId: string,
         @Query("pointId") pointId?: string,
@@ -22,13 +24,13 @@ export class KavappInventoryController {
     }
 
     @Get("catalog")
-    @CheckPermission("kavapp", "read")
+    @CheckPermission(resourceNames.kavapp, permissionActions.read)
     async getCatalog(@Param("coffeeShopId") coffeeShopId: string): Promise<KavappCatalogItem[]> {
         return this.kavappInventoryService.getCatalog(coffeeShopId);
     }
 
     @Post("sync")
-    @CheckPermission("kavapp", "write")
+    @CheckPermission(resourceNames.kavapp, permissionActions.write)
     async sync(
         @Param("coffeeShopId") coffeeShopId: string,
         @Query("pointId") pointId?: string,
@@ -39,13 +41,13 @@ export class KavappInventoryController {
     }
 
     @Get("snapshots/latest")
-    @CheckPermission("kavapp", "read")
+    @CheckPermission(resourceNames.kavapp, permissionActions.read)
     async getLatestSnapshot(@Param("coffeeShopId") coffeeShopId: string) {
         return this.kavappSyncService.getLatestSnapshot(coffeeShopId);
     }
 
     @Get("snapshots")
-    @CheckPermission("kavapp", "read")
+    @CheckPermission(resourceNames.kavapp, permissionActions.read)
     async getSnapshots(
         @Param("coffeeShopId") coffeeShopId: string,
         @Query("limit", new DefaultValuePipe(30), ParseIntPipe) limit: number,

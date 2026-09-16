@@ -13,7 +13,7 @@ import { InventoryAlertRuleDocument } from "../inventory-alert-rule-schema";
 import { InventoryAlertRuleService } from "./inventory-alert-rule.service";
 import { inventoryAlertIgnoreNames } from "../constants/inventory-alert-rules";
 import { InventoryAlertState, inventoryAlertStates } from "../constants/alert-states";
-import { CoffeeShop, CoffeeShopDocument } from "../../coffee-shop-schema";
+import { CoffeeShop } from "../../coffee-shop-schema";
 
 interface InventoryAlert {
     inventoryItem: KavappInventoryItem;
@@ -25,7 +25,7 @@ export class InventoryAlertService {
     constructor(
         private readonly telegramService: TelegramService,
         private readonly ruleService: InventoryAlertRuleService,
-        @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShopDocument>,
+        @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShop>,
     ) {}
 
     async checkAndNotify(

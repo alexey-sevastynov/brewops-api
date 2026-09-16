@@ -5,7 +5,7 @@ import { KavappClient } from "../../../../integrations/kavapp/clients/kavapp.cli
 import { KavappInventoryMapper } from "../../../../integrations/kavapp/mappers/kavapp-inventory.mapper";
 import { KavappCatalogItem } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-item";
 import { KavappInventoryResponse } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-response";
-import { CoffeeShop, CoffeeShopDocument } from "../../coffee-shop-schema";
+import { CoffeeShop } from "../../coffee-shop-schema";
 import { decrypt, isEncrypted } from "../../../../common/utils/crypto";
 
 const decryptPassword = (raw?: string | null): string | undefined => {
@@ -17,7 +17,7 @@ const decryptPassword = (raw?: string | null): string | undefined => {
 export class KavappInventoryService {
     constructor(
         private readonly kavappClient: KavappClient,
-        @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShopDocument>,
+        @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShop>,
     ) {}
 
     async getCurrentInventory(coffeeShopId: string, pointId?: string): Promise<KavappInventoryResponse> {

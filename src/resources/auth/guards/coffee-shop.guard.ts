@@ -13,16 +13,26 @@ import {
     WorkspaceMember,
     WorkspaceMemberDocument,
 } from "../../../resources/workspace-member/workspace-member-schema";
+import {
+    CoffeeShopAccess,
+    CoffeeShopAccessDocument,
+} from "../../../resources/coffee-shop-access/coffee-shop-access.schema";
 import { errorMessages } from "../../../common/constants/error-messages";
 import { PERMISSION_METADATA_KEY, RequiredPermission } from "../decorators/check-permission.decorator";
 import { AuthenticatedUser } from "../../../common/auth/types/authenticated-user";
-import { workspaceRoleKeys } from "resources/workspace-member/enums/workspace-role-key";
+import { workspaceRoleKeys } from "../../../resources/workspace-member/enums/workspace-role-key";
+import { WorkspaceService } from "../../../resources/workspace/workspace.service";
+import { type WorkspaceDocument } from "../../../resources/workspace/workspace-schema";
+import { getWorkspacePlanLimits } from "../../../common/config/workspace-plan.config";
+import { resourceNames } from "../../../common/constants/resource-names";
 
 interface GuardRequest {
     user: AuthenticatedUser;
     params: Record<string, string>;
     coffeeShop?: CoffeeShopDocument;
+    workspace?: WorkspaceDocument;
     workspaceMember?: WorkspaceMemberDocument;
+    coffeeShopAccess?: CoffeeShopAccessDocument;
     [key: string]: unknown;
 }
 
@@ -30,9 +40,12 @@ interface GuardRequest {
 export class CoffeeShopGuard implements CanActivate {
     constructor(
         private readonly reflector: Reflector,
-        @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShopDocument>,
+        @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShop>,
         @InjectModel(WorkspaceMember.name)
-        private readonly workspaceMemberModel: Model<WorkspaceMemberDocument>,
+        private readonly workspaceMemberModel: Model<WorkspaceMember>,
+        @InjectModel(CoffeeShopAccess.name)
+        private readonly coffeeShopAccessModel: Model<CoffeeShopAccessDocument>,
+        private readonly workspaceService: WorkspaceService,
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -62,56 +75,58 @@ export class CoffeeShopGuard implements CanActivate {
             throw new ForbiddenException(errorMessages.insufficientPermissions);
         }
 
-        // Attach coffeeShop and member to request for downstream usage
+        const workspace = await this.workspaceService.findById(String(coffeeShop.workspaceId));
+
         request.coffeeShop = coffeeShop;
+        request.workspace = workspace ?? undefined;
         request.workspaceMember = member;
 
-        // 3. Check Permissions
         const requiredPermission = this.reflector.getAllAndOverride<RequiredPermission>(
             PERMISSION_METADATA_KEY,
             [context.getHandler(), context.getClass()],
         );
 
+        if (requiredPermission?.resource === resourceNames.kavapp && workspace) {
+            const limits = getWorkspacePlanLimits(workspace.planKey);
+            if (!limits.allowKavappIntegration) {
+                throw new ForbiddenException(errorMessages.kavappPlanRestricted);
+            }
+        }
+
+        if (member.role === workspaceRoleKeys.owner || member.role === workspaceRoleKeys.admin) {
+            return true;
+        }
+
+        const shopAccess = await this.coffeeShopAccessModel
+            .findOne({
+                memberId: member._id,
+                coffeeShopId: coffeeShop._id,
+            })
+            .exec();
+
+        if (!shopAccess) {
+            throw new ForbiddenException(errorMessages.insufficientPermissions);
+        }
+
+        request.coffeeShopAccess = shopAccess;
+
         if (!requiredPermission) {
-            // If no decorator is specified, default to allowing access based on membership alone
             return true;
         }
 
         const { resource, action } = requiredPermission;
-        const { role, permissions = [] } = member;
+        const permissions = shopAccess.permissions || [];
 
-        // OWNER and ADMIN can do everything
-        if (role === workspaceRoleKeys.owner || role === workspaceRoleKeys.admin) {
-            return true;
+        // Check if user has specific action permission, full resource permission, or wildcard
+        const hasAccess =
+            permissions.includes(`${resource}:${action}`) ||
+            permissions.includes(resource) ||
+            permissions.includes("*:*");
+
+        if (!hasAccess) {
+            throw new ForbiddenException(errorMessages.insufficientPermissions);
         }
 
-        // MANAGER cannot delete
-        if (role === workspaceRoleKeys.manager) {
-            if (action === "delete") {
-                throw new ForbiddenException(errorMessages.insufficientPermissions);
-            }
-            return true;
-        }
-
-        // BARISTA only has access to explicitly allowed permissions
-        if (role === workspaceRoleKeys.barista) {
-            if (action === "delete") {
-                throw new ForbiddenException(errorMessages.insufficientPermissions);
-            }
-
-            // Check if they have the specific action or the general resource access
-            const hasAccess =
-                permissions.includes(`${resource}:${action}`) ||
-                permissions.includes(resource) ||
-                permissions.includes("*:*");
-
-            if (!hasAccess) {
-                throw new ForbiddenException(errorMessages.insufficientPermissions);
-            }
-
-            return true;
-        }
-
-        throw new ForbiddenException(errorMessages.insufficientPermissions);
+        return true;
     }
 }

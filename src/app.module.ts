@@ -20,6 +20,7 @@ import { KavappInventoryModule } from "./resources/coffee-shop/kavapp-inventory/
 import { WorkspaceModule } from "./resources/workspace/workspace.module";
 import { WorkspaceMemberModule } from "./resources/workspace-member/workspace-member.module";
 import { CoffeeShopModule } from "./resources/coffee-shop/coffee-shop.module";
+import { CoffeeShopAccessModule } from "./resources/coffee-shop-access/coffee-shop-access.module";
 
 @Module({
     imports: [
@@ -42,6 +43,7 @@ import { CoffeeShopModule } from "./resources/coffee-shop/coffee-shop.module";
         WorkspaceModule,
         WorkspaceMemberModule,
         CoffeeShopModule,
+        CoffeeShopAccessModule,
     ],
     controllers: [AppController],
     providers: [AppService],

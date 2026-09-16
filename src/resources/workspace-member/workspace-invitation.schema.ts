@@ -12,11 +12,27 @@ export class WorkspaceInvitation {
     @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "Workspace" })
     workspaceId!: mongoose.Types.ObjectId;
 
-    @Prop({ required: true, default: workspaceRoleKeys.barista, enum: workspaceRoleKeys })
+    @Prop({ required: true, type: String, default: workspaceRoleKeys.custom, enum: workspaceRoleKeys })
     role!: WorkspaceRoleKey;
 
     @Prop({ type: [String], default: [] })
     permissions!: string[];
+
+    @Prop({
+        type: [
+            {
+                coffeeShopId: { type: mongoose.Schema.Types.ObjectId, ref: "CoffeeShop", required: true },
+                role: { type: String, default: "custom" },
+                permissions: { type: [String], default: [] },
+            },
+        ],
+        default: [],
+    })
+    coffeeShopAccess!: Array<{
+        coffeeShopId: mongoose.Types.ObjectId;
+        role?: string;
+        permissions: string[];
+    }>;
 
     @Prop({ required: true, unique: true })
     token!: string;

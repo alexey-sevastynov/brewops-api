@@ -16,11 +16,14 @@ import { TelegramService } from "./telegram.service";
 import { telegramActions } from "./constants";
 import { type TelegramNotifyOptions } from "./types";
 import { type CoffeeShopDocument } from "../../resources/coffee-shop/coffee-shop-schema";
+import { type WorkspaceDocument } from "../../resources/workspace/workspace-schema";
+import { getWorkspacePlanLimits } from "../../common/config/workspace-plan.config";
 
 interface ExpressRequest {
     params: Record<string, string>;
     body: Record<string, unknown>;
     coffeeShop?: CoffeeShopDocument;
+    workspace?: WorkspaceDocument;
     [key: string]: unknown;
 }
 
@@ -83,6 +86,13 @@ export class TelegramInterceptor implements NestInterceptor<unknown, unknown> {
         const resourceId = request.params?.id;
 
         const data = response || request.body;
+
+        const workspace = request.workspace;
+        if (workspace) {
+            const limits = getWorkspacePlanLimits(workspace.planKey);
+
+            if (!limits.allowTelegramIntegration) return;
+        }
 
         const coffeeShop = request.coffeeShop;
 

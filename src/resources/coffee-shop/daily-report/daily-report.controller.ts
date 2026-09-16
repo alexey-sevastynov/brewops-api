@@ -6,25 +6,27 @@ import { CreateDailyReportDto } from "./dto/create-daily-report-dto";
 import { UpdateDailyReportDto } from "./dto/update-daily-report-dto";
 import { formatDailyReportMessage } from "./daily-report-telegram";
 import { CheckPermission } from "../../../resources/auth/decorators/check-permission.decorator";
+import { resourceNames } from "../../../common/constants/resource-names";
+import { permissionActions } from "../../../common/enums/permission-action";
 
 @Controller("coffee-shops/:coffeeShopId/daily-reports")
 export class DailyReportController {
     constructor(private readonly service: DailyReportService) {}
 
     @Get()
-    @CheckPermission("daily-reports", "read")
+    @CheckPermission(resourceNames.dailyReports, permissionActions.read)
     findAll(@Param("coffeeShopId") coffeeShopId: string) {
         return this.service.findAllDailyReport(coffeeShopId);
     }
 
     @Get(":id")
-    @CheckPermission("daily-reports", "read")
+    @CheckPermission(resourceNames.dailyReports, permissionActions.read)
     findById(@Param("coffeeShopId") coffeeShopId: string, @Param("id") id: string) {
         return this.service.findByIdDailyReport(id, coffeeShopId);
     }
 
     @Post()
-    @CheckPermission("daily-reports", "write")
+    @CheckPermission(resourceNames.dailyReports, permissionActions.write)
     @UsePipes(new ValidationPipe())
     @TelegramNotify({
         resource: "DailyReport",
@@ -36,7 +38,7 @@ export class DailyReportController {
     }
 
     @Patch(":id")
-    @CheckPermission("daily-reports", "write")
+    @CheckPermission(resourceNames.dailyReports, permissionActions.write)
     @UsePipes(new ValidationPipe())
     @TelegramNotify({
         resource: "DailyReport",
@@ -52,7 +54,7 @@ export class DailyReportController {
     }
 
     @Delete(":id")
-    @CheckPermission("daily-reports", "delete")
+    @CheckPermission(resourceNames.dailyReports, permissionActions.delete)
     @TelegramNotify({
         resource: "DailyReport",
         action: telegramActions.delete,
@@ -62,7 +64,7 @@ export class DailyReportController {
     }
 
     @Delete()
-    @CheckPermission("daily-reports", "delete")
+    @CheckPermission(resourceNames.dailyReports, permissionActions.delete)
     deleteAll(@Param("coffeeShopId") coffeeShopId: string) {
         return this.service.deleteAllDailyReports(coffeeShopId);
     }

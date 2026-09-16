@@ -10,11 +10,25 @@ import {
     ValidationPipe,
     ForbiddenException,
 } from "@nestjs/common";
-import { IsEmail, IsEnum, IsArray, IsString } from "class-validator";
+import { IsEmail, IsEnum, IsArray, IsString, IsOptional, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
 import { WorkspaceMemberService } from "./workspace-member.service";
 import { CurrentUser } from "../../common/auth/decorators/current-user.decorator";
 import type { AuthenticatedUser } from "../../common/auth/types/authenticated-user";
 import { type WorkspaceRoleKey, workspaceRoleKeys } from "./enums/workspace-role-key";
+
+export class CoffeeShopAccessItemDto {
+    @IsString()
+    coffeeShopId!: string;
+
+    @IsOptional()
+    @IsString()
+    role?: string;
+
+    @IsArray()
+    @IsString({ each: true })
+    permissions!: string[];
+}
 
 class InviteUserDto {
     @IsEmail()
@@ -23,18 +37,52 @@ class InviteUserDto {
     @IsEnum(workspaceRoleKeys)
     role!: string;
 
+    @IsOptional()
     @IsArray()
     @IsString({ each: true })
-    permissions!: string[];
+    permissions?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CoffeeShopAccessItemDto)
+    coffeeShopAccess?: CoffeeShopAccessItemDto[];
 }
 
 class UpdateMemberDto {
     @IsEnum(workspaceRoleKeys)
     role!: string;
 
+    @IsOptional()
     @IsArray()
     @IsString({ each: true })
-    permissions!: string[];
+    permissions?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CoffeeShopAccessItemDto)
+    coffeeShopAccess?: CoffeeShopAccessItemDto[];
+}
+
+class UpdateInvitationDto {
+    @IsOptional()
+    @IsEmail()
+    email?: string;
+
+    @IsEnum(workspaceRoleKeys)
+    role!: string;
+
+    @IsOptional()
+    @IsArray()
+    @IsString({ each: true })
+    permissions?: string[];
+
+    @IsOptional()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => CoffeeShopAccessItemDto)
+    coffeeShopAccess?: CoffeeShopAccessItemDto[];
 }
 
 @Controller("workspaces/:workspaceId")
@@ -55,12 +103,27 @@ export class WorkspaceMemberController {
         @Body() dto: UpdateMemberDto,
         @CurrentUser() user: AuthenticatedUser,
     ) {
-        await this.requireWorkspaceAdmin(user.mongoId, workspaceId);
+        const adminMember = await this.requireWorkspaceAdmin(user.mongoId, workspaceId);
+
+        if (adminMember._id.equals(memberId)) {
+            throw new ForbiddenException("Ви не можете редагувати власну роль або права.");
+        }
+
+        if (adminMember.role !== workspaceRoleKeys.owner) {
+            const targetMember = await this.service.findMemberById(memberId);
+            if (targetMember?.role === workspaceRoleKeys.admin || dto.role === workspaceRoleKeys.admin) {
+                throw new ForbiddenException(
+                    "Тільки власник робочого простору може керувати адміністраторами.",
+                );
+            }
+        }
+
         return this.service.updateMember(
             memberId,
             workspaceId,
             dto.role as WorkspaceRoleKey,
-            dto.permissions,
+            dto.permissions || [],
+            dto.coffeeShopAccess,
         );
     }
 
@@ -70,7 +133,21 @@ export class WorkspaceMemberController {
         @Param("memberId") memberId: string,
         @CurrentUser() user: AuthenticatedUser,
     ) {
-        await this.requireWorkspaceAdmin(user.mongoId, workspaceId);
+        const adminMember = await this.requireWorkspaceAdmin(user.mongoId, workspaceId);
+
+        if (adminMember._id.equals(memberId)) {
+            throw new ForbiddenException("Ви не можете видалити себе з робочого простору.");
+        }
+
+        if (adminMember.role !== workspaceRoleKeys.owner) {
+            const targetMember = await this.service.findMemberById(memberId);
+            if (targetMember?.role === workspaceRoleKeys.admin) {
+                throw new ForbiddenException(
+                    "Тільки власник робочого простору може видаляти адміністраторів.",
+                );
+            }
+        }
+
         return this.service.removeMember(memberId, workspaceId);
     }
 
@@ -87,13 +164,49 @@ export class WorkspaceMemberController {
         @Body() dto: InviteUserDto,
         @CurrentUser() user: AuthenticatedUser,
     ) {
-        await this.requireWorkspaceAdmin(user.mongoId, workspaceId);
+        const adminMember = await this.requireWorkspaceAdmin(user.mongoId, workspaceId);
+
+        if (adminMember.role !== workspaceRoleKeys.owner && dto.role === workspaceRoleKeys.admin) {
+            throw new ForbiddenException(
+                "Тільки власник робочого простору може запрошувати адміністраторів.",
+            );
+        }
+
         return this.service.inviteUser(
             workspaceId,
             dto.email,
             dto.role as WorkspaceRoleKey,
-            dto.permissions,
+            dto.permissions || [],
             user.mongoId,
+            dto.coffeeShopAccess,
+        );
+    }
+
+    @Patch("invitations/:invitationId")
+    @UsePipes(new ValidationPipe({ whitelist: true }))
+    async updateInvitation(
+        @Param("workspaceId") workspaceId: string,
+        @Param("invitationId") invitationId: string,
+        @Body() dto: UpdateInvitationDto,
+        @CurrentUser() user: AuthenticatedUser,
+    ) {
+        const adminMember = await this.requireWorkspaceAdmin(user.mongoId, workspaceId);
+
+        if (adminMember.role !== workspaceRoleKeys.owner) {
+            const invitation = await this.service.findInvitationById(invitationId);
+            if (invitation?.role === workspaceRoleKeys.admin || dto.role === workspaceRoleKeys.admin) {
+                throw new ForbiddenException(
+                    "Тільки власник робочого простору може змінювати запрошення адміністраторів.",
+                );
+            }
+        }
+
+        return this.service.updateInvitation(
+            invitationId,
+            workspaceId,
+            dto.role as WorkspaceRoleKey,
+            dto.permissions || [],
+            dto.coffeeShopAccess,
         );
     }
 
@@ -103,7 +216,17 @@ export class WorkspaceMemberController {
         @Param("invitationId") invitationId: string,
         @CurrentUser() user: AuthenticatedUser,
     ) {
-        await this.requireWorkspaceAdmin(user.mongoId, workspaceId);
+        const adminMember = await this.requireWorkspaceAdmin(user.mongoId, workspaceId);
+
+        if (adminMember.role !== workspaceRoleKeys.owner) {
+            const invitation = await this.service.findInvitationById(invitationId);
+            if (invitation?.role === workspaceRoleKeys.admin) {
+                throw new ForbiddenException(
+                    "Тільки власник робочого простору може скасовувати запрошення адміністраторів.",
+                );
+            }
+        }
+
         return this.service.cancelInvitation(invitationId, workspaceId);
     }
 

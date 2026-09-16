@@ -1,8 +1,7 @@
 export const workspaceRoleKeys = {
     owner: "owner",
     admin: "admin",
-    manager: "manager",
-    barista: "barista",
+    custom: "custom",
 } as const;
 
 export type WorkspaceRoleKey = (typeof workspaceRoleKeys)[keyof typeof workspaceRoleKeys];

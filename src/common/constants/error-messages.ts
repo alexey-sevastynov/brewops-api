@@ -15,5 +15,8 @@ export const errorMessages = {
         "We couldn't send you a verification email. Please try again later or contact support.",
     insufficientPermissions: "You do not have permission to access this resource.",
     coffeeShopPlanLimitReached: "You reached the coffee shop limit for the {0} plan.",
+    memberPlanLimitReached: "Ви досягли ліміту учасників для тарифного плану {0}.",
+    kavappPlanRestricted: "Інтеграція з Kavapp доступна лише на тарифах PRO та BUSINESS.",
+    telegramPlanRestricted: "Інтеграція з Telegram доступна лише на тарифах PRO та BUSINESS.",
     accountBlocked: "Your account has been blocked.",
 };

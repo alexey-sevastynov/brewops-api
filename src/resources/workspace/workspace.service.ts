@@ -19,7 +19,10 @@ export class WorkspaceService {
     }
 
     findByIds(ids: string[]) {
-        return this.workspaceModel.find({ _id: { $in: ids } }).exec();
+        return this.workspaceModel
+            .find({ _id: { $in: ids } })
+            .lean()
+            .exec();
     }
 
     createWorkspace(dto: CreateWorkspaceDto) {

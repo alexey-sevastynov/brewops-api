@@ -16,6 +16,10 @@ export class CreateCoffeeShopDto {
 
     @IsOptional()
     @IsString()
+    telegramChatId?: string;
+
+    @IsOptional()
+    @IsString()
     kavappEmail?: string;
 
     @IsOptional()
