@@ -17,6 +17,7 @@ import { FacilityExpenseModule } from "./resources/coffee-shop/facility-expense/
 import { OwnerWithdrawalModule } from "./resources/coffee-shop/owner-withdrawal/owner-withdrawal.module";
 import { TelegramModule } from "./infra/telegram/telegram.module";
 import { KavappInventoryModule } from "./resources/coffee-shop/kavapp-inventory/kavapp-inventory.module";
+import { KavappSalesModule } from "./resources/coffee-shop/kavapp-sales/kavapp-sales.module";
 import { WorkspaceModule } from "./resources/workspace/workspace.module";
 import { WorkspaceMemberModule } from "./resources/workspace-member/workspace-member.module";
 import { CoffeeShopModule } from "./resources/coffee-shop/coffee-shop.module";
@@ -40,7 +41,9 @@ import { CoffeeShopAccessModule } from "./resources/coffee-shop-access/coffee-sh
         FacilityExpenseModule,
         OwnerWithdrawalModule,
         KavappInventoryModule,
+        KavappSalesModule,
         WorkspaceModule,
+
         WorkspaceMemberModule,
         CoffeeShopModule,
         CoffeeShopAccessModule,

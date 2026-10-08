@@ -1,6 +1,7 @@
 import mongoose, { Document } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Employee } from "../../../resources/coffee-shop/employee/employee-schema";
+import { type KavappDailySalesAnalytics } from "../../../integrations/kavapp/types/sales/kavapp-sales-analytics.types";
 
 export type DailyReportDocument = DailyReport & Document;
 
@@ -56,6 +57,9 @@ export class DailyReport {
 
     @Prop()
     terminalPercent?: number;
+
+    @Prop({ type: Object })
+    kavappSales?: KavappDailySalesAnalytics;
 }
 
 export const DailyReportSchema = SchemaFactory.createForClass(DailyReport);

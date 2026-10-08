@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Logger, Optional } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { percent, toDecimalPercent } from "../../../common/lib/math";
@@ -11,14 +11,20 @@ import { dailyReportProps } from "./constants/daily-report-props";
 import { acquiringPercent } from "./constants/daily-report";
 import { DailyReportCalculated } from "./types/daily-report-calculated";
 import { DailyReportInput } from "./types/daily-report-input";
+import { KavappSalesService } from "../kavapp-sales/services/kavapp-sales.service";
+import { type KavappDailySalesAnalytics } from "../../../integrations/kavapp/types/sales/kavapp-sales-analytics.types";
 
 @Injectable()
 export class DailyReportService {
+    private readonly logger = new Logger(DailyReportService.name);
+
     constructor(
         @InjectModel(DailyReport.name)
         private readonly dailyModel: Model<DailyReportDocument>,
         @InjectModel(Employee.name)
         private readonly employeeModel: Model<EmployeeDocument>,
+        @Optional()
+        private readonly kavappSalesService?: KavappSalesService,
     ) {}
 
     findAllDailyReport(coffeeShopId: string) {
@@ -45,15 +51,35 @@ export class DailyReportService {
             throw new NotFoundException(errorMessages.notFound.replace("{0}", Employee.name));
         }
 
+        let kavappSales: KavappDailySalesAnalytics | undefined;
+        if (this.kavappSalesService) {
+            try {
+                const analytics = await this.kavappSalesService.getDailySalesAnalytics(
+                    coffeeShopId,
+                    createDailyReportDto.date,
+                );
+                if (analytics) kavappSales = analytics;
+            } catch (err) {
+                this.logger.warn(`Failed to fetch Kavapp sales for daily report: ${(err as Error).message}`);
+            }
+        }
+
+        const effectiveReportInput = { ...createDailyReportDto };
+        if (kavappSales?.summary?.totalRevenue) {
+            effectiveReportInput.cashRevenue = kavappSales.summary.cashTotal;
+            effectiveReportInput.terminalRevenue = kavappSales.summary.terminalTotal;
+        }
+
         const calculatedDailyReportFields = this.getCalculatedDailyReportFields(
             employee,
-            createDailyReportDto,
+            effectiveReportInput,
         );
 
         const dailyReport = await new this.dailyModel({
-            ...createDailyReportDto,
+            ...effectiveReportInput,
             coffeeShopId,
             ...calculatedDailyReportFields,
+            ...(kavappSales ? { kavappSales } : {}),
         }).save();
 
         return this.dailyModel
@@ -75,6 +101,25 @@ export class DailyReportService {
 
         if (!employee) {
             throw new NotFoundException(errorMessages.notFound.replace("{0}", Employee.name));
+        }
+
+        if (this.kavappSalesService && (!dailyModel.kavappSales || updateDailyReportDto.date)) {
+            try {
+                const analytics = await this.kavappSalesService.getDailySalesAnalytics(
+                    coffeeShopId,
+                    dailyModel.date,
+                );
+                if (analytics) dailyModel.kavappSales = analytics;
+            } catch (err) {
+                this.logger.warn(
+                    `Failed to fetch Kavapp sales for updated daily report: ${(err as Error).message}`,
+                );
+            }
+        }
+
+        if (dailyModel.kavappSales?.summary?.totalRevenue) {
+            dailyModel.cashRevenue = dailyModel.kavappSales.summary.cashTotal;
+            dailyModel.terminalRevenue = dailyModel.kavappSales.summary.terminalTotal;
         }
 
         Object.assign(dailyModel, this.getCalculatedDailyReportFields(employee, dailyModel));

@@ -6,4 +6,11 @@ export const kavappEndpoints = {
         cup: "/cup",
         ingredient: "/ingredient",
     },
+    sales: {
+        reportNew: "/report-new",
+        avgReport: "/avgreport",
+        checksReport: "/checksreport",
+        hourlyReport: "/hourlyreport",
+        financeReport: "/financereport",
+    },
 } as const;

@@ -19,4 +19,5 @@ export const dailyReportProps: Record<keyof DailyReport, string> = {
     writeOffPercent: nameOf<DailyReport>("writeOffPercent"),
     cashPercent: nameOf<DailyReport>("cashPercent"),
     terminalPercent: nameOf<DailyReport>("terminalPercent"),
+    kavappSales: nameOf<DailyReport>("kavappSales"),
 } as const;
