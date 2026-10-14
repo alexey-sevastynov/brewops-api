@@ -1,44 +1,54 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UsePipes, ValidationPipe } from "@nestjs/common";
-import { Roles } from "../../../../common/auth/decorators/roles.decorator";
-import { authorizedRoles } from "../../../../common/auth/constants/authorized-roles";
+import { Controller, Get, Post, Patch, Delete, Body, Param, UsePipes, ValidationPipe } from "@nestjs/common";
+import { InventoryAlertRuleService } from "../services/inventory-alert-rule.service";
 import { CreateInventoryAlertRuleDto } from "../dto/create-inventory-alert-rule.dto";
 import { UpdateInventoryAlertRuleDto } from "../dto/update-inventory-alert-rule.dto";
-import { InventoryAlertRuleService } from "../services/inventory-alert-rule.service";
+import { CheckPermission } from "../../../../resources/auth/decorators/check-permission.decorator";
+import { resourceNames } from "../../../../common/constants/resource-names";
+import { permissionActions } from "../../../../common/enums/permission-action";
 
-@Roles(...authorizedRoles.coffeeShop)
-@Controller("coffee-shop/kavapp/alert-rules")
+@Controller("coffee-shops/:coffeeShopId/kavapp/alert-rules")
 export class InventoryAlertRuleController {
     constructor(private readonly service: InventoryAlertRuleService) {}
 
     @Get()
-    findAll() {
-        return this.service.findAllInventoryAlertRules();
+    @CheckPermission(resourceNames.kavapp, permissionActions.read)
+    findAll(@Param("coffeeShopId") coffeeShopId: string) {
+        return this.service.findAllInventoryAlertRules(coffeeShopId);
     }
 
     @Get(":id")
-    findById(@Param("id") id: string) {
-        return this.service.findByIdInventoryAlertRule(id);
+    @CheckPermission(resourceNames.kavapp, permissionActions.read)
+    findById(@Param("coffeeShopId") coffeeShopId: string, @Param("id") id: string) {
+        return this.service.findByIdInventoryAlertRule(id, coffeeShopId);
     }
 
     @Post()
-    @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-    create(@Body() dto: CreateInventoryAlertRuleDto) {
-        return this.service.createInventoryAlertRule(dto);
+    @CheckPermission(resourceNames.kavapp, permissionActions.write)
+    @UsePipes(new ValidationPipe())
+    create(@Param("coffeeShopId") coffeeShopId: string, @Body() dto: CreateInventoryAlertRuleDto) {
+        return this.service.createInventoryAlertRule(dto, coffeeShopId);
     }
 
     @Patch(":id")
-    @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
-    update(@Param("id") id: string, @Body() dto: UpdateInventoryAlertRuleDto) {
-        return this.service.updateInventoryAlertRule(id, dto);
+    @CheckPermission(resourceNames.kavapp, permissionActions.write)
+    @UsePipes(new ValidationPipe())
+    update(
+        @Param("coffeeShopId") coffeeShopId: string,
+        @Param("id") id: string,
+        @Body() dto: UpdateInventoryAlertRuleDto,
+    ) {
+        return this.service.updateInventoryAlertRule(id, dto, coffeeShopId);
     }
 
     @Delete(":id")
-    remove(@Param("id") id: string) {
-        return this.service.removeInventoryAlertRule(id);
+    @CheckPermission(resourceNames.kavapp, permissionActions.delete)
+    remove(@Param("coffeeShopId") coffeeShopId: string, @Param("id") id: string) {
+        return this.service.removeInventoryAlertRule(id, coffeeShopId);
     }
 
     @Delete()
-    removeAll() {
-        return this.service.removeAllInventoryAlertRules();
+    @CheckPermission(resourceNames.kavapp, permissionActions.delete)
+    removeAll(@Param("coffeeShopId") coffeeShopId: string) {
+        return this.service.removeAllInventoryAlertRules(coffeeShopId);
     }
 }

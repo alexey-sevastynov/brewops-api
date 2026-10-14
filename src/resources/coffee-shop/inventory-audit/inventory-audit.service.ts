@@ -1,6 +1,7 @@
 import { Model } from "mongoose";
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import { errorMessages } from "../../../common/constants/error-messages";
 import { CreateInventoryAuditDto } from "./dto/create-inventory-audit-dto";
 import { UpdateInventoryAuditDto } from "./dto/update-inventory-audit-dto";
 import { InventoryAudit, InventoryAuditDocument } from "./inventory-audit-schema";
@@ -12,33 +13,36 @@ export class InventoryAuditService {
         private readonly model: Model<InventoryAuditDocument>,
     ) {}
 
-    findAll() {
-        return this.model.find().sort({ createdAt: -1 });
+    findAllInventoryAudit(coffeeShopId: string) {
+        return this.model.find({ coffeeShopId }).sort({ createdAt: -1 });
     }
 
-    async findById(id: string) {
-        const audit = await this.model.findById(id);
+    async findByIdInventoryAudit(id: string, coffeeShopId: string) {
+        const audit = await this.model.findOne({ _id: id, coffeeShopId });
 
         if (!audit) {
-            throw new NotFoundException("InventoryAudit not found");
+            throw new NotFoundException(errorMessages.notFound.replace("{0}", InventoryAudit.name));
         }
 
         return audit;
     }
 
-    async create(dto: CreateInventoryAuditDto) {
+    async createInventoryAudit(dto: CreateInventoryAuditDto, coffeeShopId: string) {
         const data = this.normalize(dto);
 
-        const created = await this.model.create(data);
+        const created = await this.model.create({
+            ...data,
+            coffeeShopId,
+        });
 
         return created;
     }
 
-    async update(id: string, dto: UpdateInventoryAuditDto) {
-        const audit = await this.model.findById(id);
+    async updateInventoryAudit(id: string, dto: UpdateInventoryAuditDto, coffeeShopId: string) {
+        const audit = await this.model.findOne({ _id: id, coffeeShopId });
 
         if (!audit) {
-            throw new NotFoundException("InventoryAudit not found");
+            throw new NotFoundException(errorMessages.notFound.replace("{0}", InventoryAudit.name));
         }
 
         const updatedData = this.normalize({
@@ -51,18 +55,18 @@ export class InventoryAuditService {
         return audit.save();
     }
 
-    async delete(id: string) {
-        const deleted = await this.model.findByIdAndDelete(id);
+    async deleteInventoryAudit(id: string, coffeeShopId: string) {
+        const deleted = await this.model.findOneAndDelete({ _id: id, coffeeShopId });
 
         if (!deleted) {
-            throw new NotFoundException("InventoryAudit not found");
+            throw new NotFoundException(errorMessages.notFound.replace("{0}", InventoryAudit.name));
         }
 
         return { success: true };
     }
 
-    async deleteAll() {
-        const result = await this.model.deleteMany();
+    async deleteAllInventoryAudits(coffeeShopId: string) {
+        const result = await this.model.deleteMany({ coffeeShopId });
         return { deletedCount: result.deletedCount };
     }
 

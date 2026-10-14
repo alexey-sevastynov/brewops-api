@@ -2,6 +2,7 @@ import { nameOf } from "../../../../common/utils/name-of";
 import { type DailyReport } from "../daily-report-schema";
 
 export const dailyReportProps: Record<keyof DailyReport, string> = {
+    coffeeShopId: nameOf<DailyReport>("coffeeShopId"),
     date: nameOf<DailyReport>("date"),
     cashRevenue: nameOf<DailyReport>("cashRevenue"),
     terminalRevenue: nameOf<DailyReport>("terminalRevenue"),
@@ -18,4 +19,5 @@ export const dailyReportProps: Record<keyof DailyReport, string> = {
     writeOffPercent: nameOf<DailyReport>("writeOffPercent"),
     cashPercent: nameOf<DailyReport>("cashPercent"),
     terminalPercent: nameOf<DailyReport>("terminalPercent"),
+    kavappSales: nameOf<DailyReport>("kavappSales"),
 } as const;

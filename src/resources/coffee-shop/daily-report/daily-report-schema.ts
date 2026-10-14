@@ -1,12 +1,16 @@
 import mongoose, { Document } from "mongoose";
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { Employee } from "../../../resources/coffee-shop/employee/employee-schema";
+import { type KavappDailySalesAnalytics } from "../../../integrations/kavapp/types/sales/kavapp-sales-analytics.types";
 
 export type DailyReportDocument = DailyReport & Document;
 
 @Schema({ timestamps: true })
 export class DailyReport {
-    @Prop({ required: true, unique: true })
+    @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: "CoffeeShop" })
+    coffeeShopId!: mongoose.Types.ObjectId;
+
+    @Prop({ required: true })
     date!: Date;
 
     @Prop({ required: true })
@@ -53,6 +57,11 @@ export class DailyReport {
 
     @Prop()
     terminalPercent?: number;
+
+    @Prop({ type: Object })
+    kavappSales?: KavappDailySalesAnalytics;
 }
 
 export const DailyReportSchema = SchemaFactory.createForClass(DailyReport);
+
+DailyReportSchema.index({ coffeeShopId: 1, date: 1 }, { unique: true });

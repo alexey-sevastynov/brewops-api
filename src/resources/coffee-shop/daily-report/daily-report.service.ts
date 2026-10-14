@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Logger, Optional } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { percent, toDecimalPercent } from "../../../common/lib/math";
 import { errorMessages } from "../../../common/constants/error-messages";
-import { DailyReport, DailyReportDocument } from "./daily-report-schema";
+import { type KavappDailySalesAnalytics } from "../../../integrations/kavapp/types/sales/kavapp-sales-analytics.types";
+import { KavappSalesService } from "../kavapp-sales/services/kavapp-sales.service";
 import { Employee, EmployeeDocument } from "../employee/employee-schema";
+import { DailyReport, DailyReportDocument } from "./daily-report-schema";
 import { CreateDailyReportDto } from "./dto/create-daily-report-dto";
 import { UpdateDailyReportDto } from "./dto/update-daily-report-dto";
 import { dailyReportProps } from "./constants/daily-report-props";
@@ -14,40 +16,70 @@ import { DailyReportInput } from "./types/daily-report-input";
 
 @Injectable()
 export class DailyReportService {
+    private readonly logger = new Logger(DailyReportService.name);
+
     constructor(
         @InjectModel(DailyReport.name)
         private readonly dailyModel: Model<DailyReportDocument>,
         @InjectModel(Employee.name)
         private readonly employeeModel: Model<EmployeeDocument>,
+        @Optional()
+        private readonly kavappSalesService?: KavappSalesService,
     ) {}
 
-    findAllDailyReport() {
-        return this.dailyModel.find().sort({ date: -1 }).populate(dailyReportProps.employee);
+    findAllDailyReport(coffeeShopId: string) {
+        return this.dailyModel.find({ coffeeShopId }).sort({ date: -1 }).populate(dailyReportProps.employee);
     }
 
-    async findByIdDailyReport(id: string) {
-        const report = await this.dailyModel.findById(id).populate(dailyReportProps.employee);
+    async findByIdDailyReport(id: string, coffeeShopId: string) {
+        const report = await this.dailyModel
+            .findOne({ _id: id, coffeeShopId })
+            .populate(dailyReportProps.employee);
 
         if (!report) throw new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name));
 
         return report;
     }
 
-    async createDailyReport(createDailyReportDto: CreateDailyReportDto) {
-        const employee = await this.employeeModel.findById(createDailyReportDto.employee);
+    async createDailyReport(createDailyReportDto: CreateDailyReportDto, coffeeShopId: string) {
+        const employee = await this.employeeModel.findOne({
+            _id: createDailyReportDto.employee,
+            coffeeShopId,
+        });
 
         if (!employee) {
             throw new NotFoundException(errorMessages.notFound.replace("{0}", Employee.name));
         }
 
+        let kavappSales: KavappDailySalesAnalytics | undefined;
+        if (this.kavappSalesService) {
+            try {
+                const analytics = await this.kavappSalesService.getDailySalesAnalytics(
+                    coffeeShopId,
+                    createDailyReportDto.date,
+                );
+                if (analytics) kavappSales = analytics;
+            } catch (err) {
+                this.logger.warn(`Failed to fetch Kavapp sales for daily report: ${(err as Error).message}`);
+            }
+        }
+
+        const effectiveReportInput = { ...createDailyReportDto };
+        if (kavappSales?.summary?.totalRevenue) {
+            effectiveReportInput.cashRevenue = kavappSales.summary.cashTotal;
+            effectiveReportInput.terminalRevenue = kavappSales.summary.terminalTotal;
+        }
+
         const calculatedDailyReportFields = this.getCalculatedDailyReportFields(
             employee,
-            createDailyReportDto,
+            effectiveReportInput,
         );
 
         const dailyReport = await new this.dailyModel({
-            ...createDailyReportDto,
+            ...effectiveReportInput,
+            coffeeShopId,
             ...calculatedDailyReportFields,
+            ...(kavappSales ? { kavappSales } : {}),
         }).save();
 
         return this.dailyModel
@@ -56,8 +88,8 @@ export class DailyReportService {
             .orFail(() => new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name)));
     }
 
-    async updateDailyReport(id: string, updateDailyReportDto: UpdateDailyReportDto) {
-        const dailyModel = await this.dailyModel.findById(id);
+    async updateDailyReport(id: string, updateDailyReportDto: UpdateDailyReportDto, coffeeShopId: string) {
+        const dailyModel = await this.dailyModel.findOne({ _id: id, coffeeShopId });
 
         if (!dailyModel) {
             throw new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name));
@@ -65,10 +97,29 @@ export class DailyReportService {
 
         Object.assign(dailyModel, updateDailyReportDto);
 
-        const employee = await this.employeeModel.findById(dailyModel.employee);
+        const employee = await this.employeeModel.findOne({ _id: dailyModel.employee, coffeeShopId });
 
         if (!employee) {
             throw new NotFoundException(errorMessages.notFound.replace("{0}", Employee.name));
+        }
+
+        if (this.kavappSalesService && (!dailyModel.kavappSales || updateDailyReportDto.date)) {
+            try {
+                const analytics = await this.kavappSalesService.getDailySalesAnalytics(
+                    coffeeShopId,
+                    dailyModel.date,
+                );
+                if (analytics) dailyModel.kavappSales = analytics;
+            } catch (err) {
+                this.logger.warn(
+                    `Failed to fetch Kavapp sales for updated daily report: ${(err as Error).message}`,
+                );
+            }
+        }
+
+        if (dailyModel.kavappSales?.summary?.totalRevenue) {
+            dailyModel.cashRevenue = dailyModel.kavappSales.summary.cashTotal;
+            dailyModel.terminalRevenue = dailyModel.kavappSales.summary.terminalTotal;
         }
 
         Object.assign(dailyModel, this.getCalculatedDailyReportFields(employee, dailyModel));
@@ -81,14 +132,14 @@ export class DailyReportService {
             .orFail(() => new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name)));
     }
 
-    async deleteDailyReport(id: string) {
-        const deleted = await this.dailyModel.findByIdAndDelete(id);
+    async deleteDailyReport(id: string, coffeeShopId: string) {
+        const deleted = await this.dailyModel.findOneAndDelete({ _id: id, coffeeShopId });
 
         if (!deleted) throw new NotFoundException(errorMessages.notFound.replace("{0}", DailyReport.name));
     }
 
-    async deleteAllDailyReports() {
-        const result = await this.dailyModel.deleteMany();
+    async deleteAllDailyReports(coffeeShopId: string) {
+        const result = await this.dailyModel.deleteMany({ coffeeShopId });
 
         return { deletedCount: result.deletedCount };
     }

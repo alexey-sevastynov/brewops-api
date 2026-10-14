@@ -10,13 +10,26 @@ import { User, UserSchema } from "../../resources/user/user-schema";
 import { getRequiredEnv } from "../../common/utils/infra/env-functions";
 import { envKeys } from "../../common/enums/infra/env-key";
 import { MailVerificationModule } from "../../resources/mail-verification/mail-verification.module";
+import { WorkspaceModule } from "../../resources/workspace/workspace.module";
+import { WorkspaceMemberModule } from "../../resources/workspace-member/workspace-member.module";
+import {
+    WorkspaceMember,
+    WorkspaceMemberSchema,
+} from "../../resources/workspace-member/workspace-member-schema";
+import { CoffeeShop, CoffeeShopEntitySchema } from "../../resources/coffee-shop/coffee-shop-schema";
+import { CoffeeShopAccessModule } from "../../resources/coffee-shop-access/coffee-shop-access.module";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
-import { RolesGuard } from "./guards/roles.guard";
+import { CoffeeShopGuard } from "./guards/coffee-shop.guard";
 
 @Module({
     imports: [
-        MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+        CoffeeShopAccessModule,
+        MongooseModule.forFeature([
+            { name: User.name, schema: UserSchema },
+            { name: WorkspaceMember.name, schema: WorkspaceMemberSchema },
+            { name: CoffeeShop.name, schema: CoffeeShopEntitySchema },
+        ]),
         PassportModule.register({ defaultStrategy: "jwt" }),
         JwtModule.registerAsync({
             inject: [ConfigService],
@@ -26,6 +39,8 @@ import { RolesGuard } from "./guards/roles.guard";
             }),
         }),
         MailVerificationModule,
+        WorkspaceModule,
+        WorkspaceMemberModule,
     ],
     controllers: [AuthController],
     providers: [
@@ -37,7 +52,7 @@ import { RolesGuard } from "./guards/roles.guard";
         },
         {
             provide: APP_GUARD,
-            useClass: RolesGuard,
+            useClass: CoffeeShopGuard,
         },
     ],
     exports: [AuthService, JwtModule],

@@ -10,40 +10,42 @@ import { errorMessages } from "../../../common/constants/error-messages";
 export class EmployeeService {
     constructor(@InjectModel(Employee.name) private readonly employeeModel: Model<EmployeeDocument>) {}
 
-    findEmployee() {
-        return this.employeeModel.find().exec();
+    findEmployee(coffeeShopId: string) {
+        return this.employeeModel.find({ coffeeShopId }).exec();
     }
 
-    async findByIdEmployee(id: string) {
-        const employee = await this.employeeModel.findById(id).exec();
+    async findByIdEmployee(id: string, coffeeShopId: string) {
+        const employee = await this.employeeModel.findOne({ _id: id, coffeeShopId }).exec();
 
         if (!employee) throw new NotFoundException(errorMessages.notFound.replace("{0}", Employee.name));
 
         return employee;
     }
 
-    createEmployee(dto: CreateEmployeeDto) {
-        const employee = new this.employeeModel(dto);
+    createEmployee(dto: CreateEmployeeDto, coffeeShopId: string) {
+        const employee = new this.employeeModel({ ...dto, coffeeShopId });
 
         return employee.save();
     }
 
-    async updateEmployee(id: string, dto: UpdateEmployeeDto) {
-        const updated = await this.employeeModel.findByIdAndUpdate(id, dto, { new: true });
+    async updateEmployee(id: string, dto: UpdateEmployeeDto, coffeeShopId: string) {
+        const updated = await this.employeeModel.findOneAndUpdate({ _id: id, coffeeShopId }, dto, {
+            new: true,
+        });
 
         if (!updated) throw new NotFoundException(errorMessages.notFound.replace("{0}", Employee.name));
 
         return updated;
     }
 
-    async deleteEmployee(id: string) {
-        const deleted = await this.employeeModel.findByIdAndDelete(id);
+    async deleteEmployee(id: string, coffeeShopId: string) {
+        const deleted = await this.employeeModel.findOneAndDelete({ _id: id, coffeeShopId });
 
         if (!deleted) throw new NotFoundException(errorMessages.notFound.replace("{0}", Employee.name));
     }
 
-    async deleteAllEmployee() {
-        const result = await this.employeeModel.deleteMany();
+    async deleteAllEmployee(coffeeShopId: string) {
+        const result = await this.employeeModel.deleteMany({ coffeeShopId });
 
         return { deletedCount: result.deletedCount };
     }

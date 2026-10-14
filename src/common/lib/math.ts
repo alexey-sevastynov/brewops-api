@@ -15,3 +15,7 @@ export function toDecimalPercent(percent: number) {
 export function round(value: number, precision = 2) {
     return Number(new Big(value).round(precision));
 }
+
+export function discountToPaidRatio(discountPercent: number) {
+    return Number(new Big(discountPercent).div(new Big(100).minus(discountPercent)));
+}

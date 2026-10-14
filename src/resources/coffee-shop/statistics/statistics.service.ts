@@ -40,17 +40,17 @@ export class StatisticsService {
         private readonly exchangeRateService: ExchangeRateService,
     ) {}
 
-    async getStatistics(dateRange: GetStatisticsDto) {
+    async getStatistics(coffeeShopId: string, dateRange: GetStatisticsDto) {
         const startOfDay = getStartOfDay(dateRange.from);
         const endOfDay = getEndOfDay(dateRange.to);
-        const dailyReports = await this.getDailyReports(startOfDay, endOfDay);
-        const dailyExpenses = await this.getDailyExpenses(startOfDay, endOfDay);
-        const monthlyExpenses = await this.getMonthlyExpenses(startOfDay, endOfDay);
-        const inventoryAudits = await this.getInventoryAudits(startOfDay, endOfDay);
-        const selectedPeriodWithdrawals = await this.getOwnerWithdrawals(startOfDay, endOfDay);
-        const allTimeWithdrawals = await this.getAllTimeOwnerWithdrawals();
+        const dailyReports = await this.getDailyReports(coffeeShopId, startOfDay, endOfDay);
+        const dailyExpenses = await this.getDailyExpenses(coffeeShopId, startOfDay, endOfDay);
+        const monthlyExpenses = await this.getMonthlyExpenses(coffeeShopId, startOfDay, endOfDay);
+        const inventoryAudits = await this.getInventoryAudits(coffeeShopId, startOfDay, endOfDay);
+        const selectedPeriodWithdrawals = await this.getOwnerWithdrawals(coffeeShopId, startOfDay, endOfDay);
+        const allTimeWithdrawals = await this.getAllTimeOwnerWithdrawals(coffeeShopId);
         const exchangeRateInfo = await this.exchangeRateService.getUsdToUahRate();
-        const facilityExpenseSummary = await this.getFacilityExpenseSummary(startOfDay);
+        const facilityExpenseSummary = await this.getFacilityExpenseSummary(coffeeShopId, startOfDay);
 
         const coffeeShopStatistics = this.createCoffeeShopStatistics(
             startOfDay,
@@ -68,16 +68,17 @@ export class StatisticsService {
         return coffeeShopStatistics;
     }
 
-    private async getDailyReports(startOfDay: Date, endOfDay: Date) {
+    private async getDailyReports(coffeeShopId: string, startOfDay: Date, endOfDay: Date) {
         const dailyReports = await this.dailyReportModel
-            .find({ date: { $gte: startOfDay, $lte: endOfDay } })
+            .find({ coffeeShopId, date: { $gte: startOfDay, $lte: endOfDay } })
             .populate("employee");
 
         return dailyReports;
     }
 
-    private async getDailyExpenses(startOfDay: Date, endOfDay: Date) {
+    private async getDailyExpenses(coffeeShopId: string, startOfDay: Date, endOfDay: Date) {
         const dailyExpenses = await this.expenseReportModel.find({
+            coffeeShopId,
             type: expenseReportTypes.daily,
             date: { $gte: startOfDay, $lte: endOfDay },
         });
@@ -85,8 +86,9 @@ export class StatisticsService {
         return dailyExpenses;
     }
 
-    private async getMonthlyExpenses(startOfDay: Date, endOfDay: Date) {
+    private async getMonthlyExpenses(coffeeShopId: string, startOfDay: Date, endOfDay: Date) {
         const monthlyExpenses = await this.expenseReportModel.find({
+            coffeeShopId,
             type: expenseReportTypes.monthly,
             validFrom: { $lte: endOfDay },
             $or: [{ validTo: { $exists: false } }, { validTo: null }, { validTo: { $gte: startOfDay } }],
@@ -95,8 +97,9 @@ export class StatisticsService {
         return monthlyExpenses;
     }
 
-    private async getInventoryAudits(startOfDay: Date, endOfDay: Date) {
+    private async getInventoryAudits(coffeeShopId: string, startOfDay: Date, endOfDay: Date) {
         const inventoryAudits = await this.inventoryAuditModel.find({
+            coffeeShopId,
             validFrom: { $lte: endOfDay },
             validTo: { $gte: startOfDay },
         });
@@ -104,16 +107,17 @@ export class StatisticsService {
         return inventoryAudits;
     }
 
-    private async getOwnerWithdrawals(startOfDay: Date, endOfDay: Date) {
+    private async getOwnerWithdrawals(coffeeShopId: string, startOfDay: Date, endOfDay: Date) {
         const ownerWithdrawals = await this.ownerWithdrawalModel.find({
+            coffeeShopId,
             withdrawalDate: { $gte: startOfDay, $lte: endOfDay },
         });
 
         return ownerWithdrawals;
     }
 
-    private async getAllTimeOwnerWithdrawals() {
-        const ownerWithdrawals = await this.ownerWithdrawalModel.find();
+    private async getAllTimeOwnerWithdrawals(coffeeShopId: string) {
+        const ownerWithdrawals = await this.ownerWithdrawalModel.find({ coffeeShopId });
 
         return ownerWithdrawals;
     }
@@ -171,9 +175,9 @@ export class StatisticsService {
         return expensesBreakdown;
     }
 
-    private async getFacilityExpenseSummary(startOfDay: Date) {
+    private async getFacilityExpenseSummary(coffeeShopId: string, startOfDay: Date) {
         const period = getStartOfMonth(startOfDay);
-        const facilityExpenses = await this.facilityExpenseModel.find({ period });
+        const facilityExpenses = await this.facilityExpenseModel.find({ coffeeShopId, period });
 
         const targetAmount = 20175;
         const collectedAmount = facilityExpenses.reduce((sum, item) => sum + item.amount, 0);

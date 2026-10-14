@@ -25,7 +25,6 @@ import {
 export class TelegramService {
     private readonly logger = new Logger(TelegramService.name);
     private readonly botToken: string;
-    private readonly defaultChatId: string;
 
     constructor(
         private readonly configService: ConfigService,
@@ -33,7 +32,6 @@ export class TelegramService {
         private readonly mappingModel: Model<TelegramMessageMappingDocument>,
     ) {
         this.botToken = getRequiredEnv(envKeys.telegramBotToken, configService);
-        this.defaultChatId = getRequiredEnv(envKeys.telegramChatId, configService);
     }
 
     private get telegramBotApiUrl(): string {
@@ -65,6 +63,7 @@ export class TelegramService {
     }
 
     async handleCreate(
+        chatId: string,
         resourceName: string,
         data: Record<string, unknown>,
         customMessageFn: (data: Record<string, unknown>) => string | Promise<string>,
@@ -72,7 +71,7 @@ export class TelegramService {
         const messageText = await customMessageFn(data);
 
         try {
-            const result = await this.sendMessage(this.defaultChatId, messageText);
+            const result = await this.sendMessage(chatId, messageText);
 
             if (!result.result) return;
 

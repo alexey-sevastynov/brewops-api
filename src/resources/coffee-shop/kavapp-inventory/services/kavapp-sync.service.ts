@@ -16,11 +16,15 @@ export class KavappSyncService {
         private readonly inventoryAlertService: InventoryAlertService,
     ) {}
 
-    async sync(pointId?: string, testAlert = false): Promise<KavappInventorySnapshotDocument> {
-        const previousSnapshot = await this.getLatestSnapshot();
-        const inventory = await this.kavappInventoryService.getCurrentInventory(pointId);
+    async sync(
+        coffeeShopId: string,
+        pointId?: string,
+        testAlert = false,
+    ): Promise<KavappInventorySnapshotDocument> {
+        const inventory = await this.kavappInventoryService.getCurrentInventory(coffeeShopId, pointId);
 
         const snapshot = new this.snapshotModel({
+            coffeeShopId,
             syncDate: new Date(),
             cup: inventory.cup,
             ingredient: inventory.ingredient,
@@ -31,7 +35,7 @@ export class KavappSyncService {
         const saved = await snapshot.save();
 
         try {
-            await this.inventoryAlertService.checkAndNotify(inventory, previousSnapshot, testAlert);
+            await this.inventoryAlertService.checkAndNotify(coffeeShopId, inventory, testAlert);
         } catch (alertError) {
             this.logger.error("Failed to run alert checks", alertError);
         }
@@ -39,11 +43,11 @@ export class KavappSyncService {
         return saved;
     }
 
-    async getLatestSnapshot(): Promise<KavappInventorySnapshotDocument | null> {
-        return this.snapshotModel.findOne().sort({ syncDate: -1 }).exec();
+    async getLatestSnapshot(coffeeShopId: string): Promise<KavappInventorySnapshotDocument | null> {
+        return this.snapshotModel.findOne({ coffeeShopId }).sort({ syncDate: -1 }).exec();
     }
 
-    async getHistory(limit = 30): Promise<KavappInventorySnapshotDocument[]> {
-        return this.snapshotModel.find().sort({ syncDate: -1 }).limit(limit).exec();
+    async getHistory(coffeeShopId: string, limit = 30): Promise<KavappInventorySnapshotDocument[]> {
+        return this.snapshotModel.find({ coffeeShopId }).sort({ syncDate: -1 }).limit(limit).exec();
     }
 }

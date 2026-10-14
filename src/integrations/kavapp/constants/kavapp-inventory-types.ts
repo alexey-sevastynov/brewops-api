@@ -3,6 +3,6 @@ export const kavappInventoryTypes = {
     cup: "cup",
     product: "product",
     kitchen: "kitchen",
-};
+} as const;
 
 export type KavappInventoryItemType = (typeof kavappInventoryTypes)[keyof typeof kavappInventoryTypes];
