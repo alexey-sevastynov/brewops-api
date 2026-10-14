@@ -1,9 +1,11 @@
 import { discountToPaidRatio, percent, round } from "../../../common/lib/math";
 import { isNumber, isString } from "../../../common/utils/guards";
+import { formatDateToTime } from "../../../common/utils/date/date";
 import type {
     KavappCheckItem,
     KavappDailySalesRaw,
     KavappHourlyReportItem,
+    KavappWorkReportItem,
 } from "../types/sales/kavapp-sales-raw.types";
 import type {
     CashAuditSummary,
@@ -14,6 +16,7 @@ import type {
     KavappDailySalesAnalytics,
     MorningPromoStats,
     ProductSalesSummary,
+    WorkShiftSummary,
 } from "../types/sales/kavapp-sales-analytics.types";
 
 const kavappCheckStatuses = {
@@ -48,6 +51,7 @@ export class KavappSalesMapper {
             discounts: this.buildDiscounts(raw, completedChecks),
             products: this.buildProducts(raw),
             cashiers: this.collectCashiers(raw),
+            workShift: this.buildWorkShift(raw.workReport),
         };
 
         return kavappDailySalesAnalytics;
@@ -373,6 +377,33 @@ export class KavappSalesMapper {
 
             return isNaN(parsed) ? fallback : parsed;
         }
+
         return fallback;
+    }
+
+    private static buildWorkShift(workReport?: KavappWorkReportItem[]) {
+        if (!workReport?.length) return undefined;
+
+        let earliestStart: string | undefined;
+        let latestEnd: string | undefined;
+
+        for (const shift of workReport) {
+            if (shift.sdtime && (!earliestStart || shift.sdtime < earliestStart)) {
+                earliestStart = shift.sdtime;
+            }
+
+            if (shift.edtime && (!latestEnd || shift.edtime > latestEnd)) {
+                latestEnd = shift.edtime;
+            }
+        }
+
+        if (!earliestStart && !latestEnd) return undefined;
+
+        const workShiftSummary: WorkShiftSummary = {
+            startTime: formatDateToTime(earliestStart),
+            endTime: formatDateToTime(latestEnd),
+        };
+
+        return workShiftSummary;
     }
 }

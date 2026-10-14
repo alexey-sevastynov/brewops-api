@@ -13,16 +13,16 @@ import { type DailyReport } from "./daily-report-schema";
 const logger = new Logger("DailyReportTelegram");
 
 export const formatDailyReportMessage =
-    (_aiService?: AiService, context?: TelegramNotificationContext) => async (data: DailyReport) => {
-        let salesAnalytics = data.kavappSales;
+    (_aiService?: AiService, context?: TelegramNotificationContext) => async (dailyReport: DailyReport) => {
+        let salesAnalytics = dailyReport.kavappSales;
 
         if (!salesAnalytics && context?.kavappSalesService) {
             try {
-                const shopId = context.coffeeShop?._id?.toString() || data.coffeeShopId?.toString();
+                const shopId = context.coffeeShop?._id?.toString() || dailyReport.coffeeShopId?.toString();
 
                 if (shopId) {
                     salesAnalytics =
-                        (await context.kavappSalesService.getDailySalesAnalytics(shopId, data.date)) ??
+                        (await context.kavappSalesService.getDailySalesAnalytics(shopId, dailyReport.date)) ??
                         undefined;
                 }
             } catch (error) {
@@ -33,33 +33,7 @@ export const formatDailyReportMessage =
             }
         }
 
-        let reportData = data;
-
-        if (salesAnalytics?.summary?.totalRevenue) {
-            const totalRevenue = salesAnalytics.summary.totalRevenue;
-            const cashRevenue = salesAnalytics.summary.cashTotal;
-            const terminalRevenue = salesAnalytics.summary.terminalTotal;
-
-            reportData = {
-                ...data,
-                totalRevenue,
-                cashRevenue,
-                terminalRevenue,
-                cashPercent: (cashRevenue / totalRevenue) * 100,
-                terminalPercent: (terminalRevenue / totalRevenue) * 100,
-                ...(data.costOfGoods !== undefined && {
-                    costPercent: (data.costOfGoods / totalRevenue) * 100,
-                }),
-                ...(data.productWriteOffs !== undefined && {
-                    writeOffPercent: (data.productWriteOffs / totalRevenue) * 100,
-                }),
-                ...(data.employeeTotalSalary !== undefined && {
-                    salaryPercent: (data.employeeTotalSalary / totalRevenue) * 100,
-                }),
-            };
-        }
-
-        return sanitizeTelegramMarkdown(buildDailyReportTemplate(reportData, salesAnalytics));
+        return sanitizeTelegramMarkdown(buildDailyReportTemplate(dailyReport, salesAnalytics));
     };
 
 function sanitizeTelegramMarkdown(text: string): string {
@@ -77,28 +51,24 @@ function sanitizeTelegramMarkdown(text: string): string {
 }
 
 function buildReportHeaderSection(data: DailyReport, sales?: KavappDailySalesAnalytics): string {
-    const employee = data.employee as unknown;
-    let employeeName = "Не вказано";
+    const shift = sales?.workShift ?? data.kavappSales?.workShift;
 
-    if (
-        employee &&
-        typeof employee === "object" &&
-        "name" in employee &&
-        (employee as { name: string }).name
-    ) {
-        employeeName = (employee as { name: string }).name;
-    } else if (sales?.cashiers?.length) {
-        employeeName = sales.cashiers.join(", ");
-    } else if (typeof employee === "string" && employee.trim() !== "") {
-        employeeName = employee;
+    const lines = [
+        `*ЩОДЕННИЙ АНАЛІТИЧНИЙ ЗВІТ*`,
+        ``,
+        `*Дата:* ${formatDateToLongWithWeekDay(data.date)}`,
+        `*Працівник зміни:* ${data.employee.name}`,
+    ];
+
+    if (shift?.startTime) {
+        lines.push(`*Початок зміни:* ${shift.startTime}`);
     }
 
-    const dateStr = data.date ? formatDateToLongWithWeekDay(data.date) : "Сьогодні";
+    if (shift?.endTime) {
+        lines.push(`*Кінець зміни:* ${shift.endTime}`);
+    }
 
-    return `*ЩОДЕННИЙ АНАЛІТИЧНИЙ ЗВІТ*
-
-*Дата:* ${dateStr}
-*Працівник зміни:* ${employeeName}`;
+    return lines.join("\n");
 }
 
 function buildFinancialSection(data: DailyReport): string {

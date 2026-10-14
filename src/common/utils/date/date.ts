@@ -32,6 +32,10 @@ export function formatDateToDateTime(date: unknown) {
     return formatDate(date, dateFormatStrings.dateTime);
 }
 
+export function formatDateToTime(date: unknown) {
+    return formatDate(date, dateFormatStrings.time);
+}
+
 export function formatDateToMonth(date: unknown) {
     return formatDate(date, dateFormatStrings.month);
 }

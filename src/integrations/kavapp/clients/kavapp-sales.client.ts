@@ -18,6 +18,7 @@ import {
     KavappHourlyReportItem,
     KavappPromotionItem,
     KavappSaleItem,
+    KavappWorkReportItem,
 } from "../types/sales/kavapp-sales-raw.types";
 import { KavappAuthClient } from "./kavapp-auth.client";
 
@@ -60,6 +61,7 @@ export class KavappSalesClient {
                     discountsList,
                     cardsList,
                     promotionsList,
+                    workReport,
                 ] = await Promise.all([
                     this.fetchReportNew(token, sdtime, edtime),
                     this.fetchAvgReport(token, sdtime, edtime),
@@ -71,6 +73,7 @@ export class KavappSalesClient {
                     this.fetchDiscounts(token),
                     this.fetchCards(token),
                     this.fetchPromotions(token),
+                    this.fetchWorkReport(token, sdtime, edtime),
                 ]);
 
                 return {
@@ -84,6 +87,7 @@ export class KavappSalesClient {
                     discountsList: this.toArray(discountsList),
                     cardsList: this.toArray(cardsList),
                     promotionsList: this.toArray(promotionsList),
+                    workReport: this.toArray(workReport),
                 };
             });
         } catch (error) {
@@ -178,6 +182,14 @@ export class KavappSalesClient {
         return this.fetchGetEndpoint<KavappPromotionItem[]>(kavappEndpoints.sales.promotion, token).catch(
             () => [],
         );
+    }
+
+    private fetchWorkReport(token: string, sdtime: string, edtime: string) {
+        return this.fetchSalesEndpoint<KavappWorkReportItem[]>(kavappEndpoints.sales.workReport, token, {
+            dateRangePicker: { sdtime, edtime },
+            sdtime,
+            edtime,
+        }).catch(() => []);
     }
 
     private toArray<T>(value: T): T extends unknown[] ? T : never {

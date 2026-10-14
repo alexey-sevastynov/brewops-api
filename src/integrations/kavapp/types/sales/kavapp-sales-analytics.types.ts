@@ -93,6 +93,11 @@ export interface CashAuditSummary {
     returns: number;
 }
 
+export interface WorkShiftSummary {
+    startTime?: string;
+    endTime?: string;
+}
+
 export interface KavappDailySalesAnalytics {
     summary: KavappDailySalesSummary;
     hourly: KavappHourlySalesAnalytics;
@@ -100,4 +105,5 @@ export interface KavappDailySalesAnalytics {
     products: KavappProductSalesAnalytics;
     cashiers: string[];
     cashAudit?: CashAuditSummary;
+    workShift?: WorkShiftSummary;
 }

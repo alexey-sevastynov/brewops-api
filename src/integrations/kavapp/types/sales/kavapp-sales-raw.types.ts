@@ -129,6 +129,18 @@ export interface KavappPromotionItem {
     addParams?: string;
 }
 
+export interface KavappWorkReportItem {
+    idwork?: string;
+    idsalepoint?: string;
+    idworker?: string;
+    sdtime?: string;
+    sdtimeUtc?: string;
+    edtime?: string;
+    edtimeUtc?: string;
+    kasa?: string;
+    [key: string]: unknown;
+}
+
 export interface KavappDailySalesRaw {
     reportNew: KavappSaleItem[];
     avgReport: KavappAvgReportItem[];
@@ -140,4 +152,5 @@ export interface KavappDailySalesRaw {
     discountsList?: KavappDiscountItem[];
     cardsList?: KavappCardItem[];
     promotionsList?: KavappPromotionItem[];
+    workReport?: KavappWorkReportItem[];
 }
