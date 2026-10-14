@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-
 import { TelegramService } from "../../../../infra/telegram/telegram.service";
 import { KavappInventoryItem } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-item";
 import { KavappInventoryResponse } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-response";
@@ -27,11 +26,7 @@ export class InventoryAlertService {
         @InjectModel(CoffeeShop.name) private readonly coffeeShopModel: Model<CoffeeShop>,
     ) {}
 
-    async checkAndNotify(
-        coffeeShopId: string,
-        inventory: KavappInventoryResponse,
-        forceTest = false,
-    ) {
+    async checkAndNotify(coffeeShopId: string, inventory: KavappInventoryResponse, forceTest = false) {
         const inventoryAlertRules = await this.ruleService.getInventoryAlertRules(coffeeShopId);
         const rulesByKey = new Map(
             inventoryAlertRules.map((rule) => [this.ruleKey(rule.itemType, rule.kavappItemId), rule]),
@@ -181,6 +176,7 @@ export class InventoryAlertService {
                     message += `  ${lowStockInventoryAlert.inventoryAlertRule?.description}\n`;
             }
         }
+
         return message.trim();
     }
 
