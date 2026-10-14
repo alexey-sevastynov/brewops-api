@@ -4,6 +4,7 @@ export interface AuthResponse {
     token: string;
     userId: string;
     userName: string;
-    userRole: UserRoleKey;
     isVerified: boolean;
+    userRole?: UserRoleKey;
+    workspaceId?: string;
 }

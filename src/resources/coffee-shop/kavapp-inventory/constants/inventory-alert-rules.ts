@@ -1,1 +1,1 @@
-export const inventoryAlertIgnoreNames = new Set(["Кава/Вода", "Кава/Цукор"]);
+export const inventoryAlertIgnoreNames = new Set(["Кава/Вода", "Кава/Цукор", "Лимонад/Лід"]);

@@ -4,7 +4,8 @@ export type AuthenticatedUser = {
     mongoId: string;
     userId: string;
     userName: string;
-    userRole: UserRoleKey;
     isVerified: boolean;
-    isGuest: boolean;
+    userRole?: UserRoleKey;
+    workspaceId?: string;
+    workspaceRole?: string;
 };

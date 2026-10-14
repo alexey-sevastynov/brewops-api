@@ -1,6 +1,7 @@
 import { Model } from "mongoose";
 import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
+import { errorMessages } from "../../../common/constants/error-messages";
 import { CreateExpenseReportDto } from "./dto/create-expense-report-dto";
 import { UpdateExpenseReportDto } from "./dto/update-expense-report-dto";
 import { ExpenseReport, ExpenseReportDocument } from "./expense-report-schema";
@@ -12,33 +13,36 @@ export class ExpenseReportService {
         private readonly model: Model<ExpenseReportDocument>,
     ) {}
 
-    findAll() {
-        return this.model.find().sort({ createdAt: -1 });
+    findAllExpenseReport(coffeeShopId: string) {
+        return this.model.find({ coffeeShopId }).sort({ createdAt: -1 });
     }
 
-    async findById(id: string) {
-        const report = await this.model.findById(id);
+    async findByIdExpenseReport(id: string, coffeeShopId: string) {
+        const report = await this.model.findOne({ _id: id, coffeeShopId });
 
         if (!report) {
-            throw new NotFoundException("ExpenseReport not found");
+            throw new NotFoundException(errorMessages.notFound.replace("{0}", ExpenseReport.name));
         }
 
         return report;
     }
 
-    async create(dto: CreateExpenseReportDto) {
+    async createExpenseReport(dto: CreateExpenseReportDto, coffeeShopId: string) {
         const data = this.normalize(dto);
 
-        const created = await this.model.create(data);
+        const created = await this.model.create({
+            ...data,
+            coffeeShopId,
+        });
 
         return created;
     }
 
-    async update(id: string, dto: UpdateExpenseReportDto) {
-        const report = await this.model.findById(id);
+    async updateExpenseReport(id: string, dto: UpdateExpenseReportDto, coffeeShopId: string) {
+        const report = await this.model.findOne({ _id: id, coffeeShopId });
 
         if (!report) {
-            throw new NotFoundException("ExpenseReport not found");
+            throw new NotFoundException(errorMessages.notFound.replace("{0}", ExpenseReport.name));
         }
 
         const updatedData = this.normalize({
@@ -51,18 +55,18 @@ export class ExpenseReportService {
         return report.save();
     }
 
-    async delete(id: string) {
-        const deleted = await this.model.findByIdAndDelete(id);
+    async deleteExpenseReport(id: string, coffeeShopId: string) {
+        const deleted = await this.model.findOneAndDelete({ _id: id, coffeeShopId });
 
         if (!deleted) {
-            throw new NotFoundException("ExpenseReport not found");
+            throw new NotFoundException(errorMessages.notFound.replace("{0}", ExpenseReport.name));
         }
 
         return { success: true };
     }
 
-    async deleteAll() {
-        const result = await this.model.deleteMany();
+    async deleteAllExpenseReports(coffeeShopId: string) {
+        const result = await this.model.deleteMany({ coffeeShopId });
         return { deletedCount: result.deletedCount };
     }
 

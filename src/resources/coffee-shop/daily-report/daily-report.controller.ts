@@ -1,61 +1,71 @@
 import { Controller, Get, Post, Delete, Body, Param, UsePipes, ValidationPipe, Patch } from "@nestjs/common";
 import { TelegramNotify } from "../../../infra/telegram/telegram.decorator";
 import { telegramActions } from "../../../infra/telegram/constants";
-import { Roles } from "../../../common/auth/decorators/roles.decorator";
-import { authorizedRoles } from "../../../common/auth/constants/authorized-roles";
+import { CheckPermission } from "../../../resources/auth/decorators/check-permission.decorator";
+import { resourceNames } from "../../../common/constants/resource-names";
+import { permissionActions } from "../../../common/enums/permission-action";
 import { DailyReportService } from "./daily-report.service";
 import { CreateDailyReportDto } from "./dto/create-daily-report-dto";
 import { UpdateDailyReportDto } from "./dto/update-daily-report-dto";
 import { formatDailyReportMessage } from "./daily-report-telegram";
 
-@Roles(...authorizedRoles.coffeeShop)
-@Controller("coffee-shop/daily-reports")
+@Controller("coffee-shops/:coffeeShopId/daily-reports")
 export class DailyReportController {
     constructor(private readonly service: DailyReportService) {}
 
     @Get()
-    findAll() {
-        return this.service.findAllDailyReport();
+    @CheckPermission(resourceNames.dailyReports, permissionActions.read)
+    findAll(@Param("coffeeShopId") coffeeShopId: string) {
+        return this.service.findAllDailyReport(coffeeShopId);
     }
 
     @Get(":id")
-    findById(@Param("id") id: string) {
-        return this.service.findByIdDailyReport(id);
+    @CheckPermission(resourceNames.dailyReports, permissionActions.read)
+    findById(@Param("coffeeShopId") coffeeShopId: string, @Param("id") id: string) {
+        return this.service.findByIdDailyReport(id, coffeeShopId);
     }
 
     @Post()
+    @CheckPermission(resourceNames.dailyReports, permissionActions.write)
     @UsePipes(new ValidationPipe())
     @TelegramNotify({
         resource: "DailyReport",
         action: telegramActions.create,
         messageFactory: formatDailyReportMessage,
     })
-    create(@Body() dto: CreateDailyReportDto) {
-        return this.service.createDailyReport(dto);
+    create(@Param("coffeeShopId") coffeeShopId: string, @Body() dto: CreateDailyReportDto) {
+        return this.service.createDailyReport(dto, coffeeShopId);
     }
 
     @Patch(":id")
+    @CheckPermission(resourceNames.dailyReports, permissionActions.write)
     @UsePipes(new ValidationPipe())
     @TelegramNotify({
         resource: "DailyReport",
         action: telegramActions.update,
         messageFactory: formatDailyReportMessage,
     })
-    update(@Param("id") id: string, @Body() dto: UpdateDailyReportDto) {
-        return this.service.updateDailyReport(id, dto);
+    update(
+        @Param("coffeeShopId") coffeeShopId: string,
+        @Param("id") id: string,
+        @Body() dto: UpdateDailyReportDto,
+    ) {
+        return this.service.updateDailyReport(id, dto, coffeeShopId);
     }
 
     @Delete(":id")
+    @CheckPermission(resourceNames.dailyReports, permissionActions.delete)
     @TelegramNotify({
         resource: "DailyReport",
         action: telegramActions.delete,
     })
-    delete(@Param("id") id: string) {
-        return this.service.deleteDailyReport(id);
+    delete(@Param("coffeeShopId") coffeeShopId: string, @Param("id") id: string) {
+        return this.service.deleteDailyReport(id, coffeeShopId);
     }
 
     @Delete()
-    deleteAll() {
-        return this.service.deleteAllDailyReports();
+    @CheckPermission(resourceNames.dailyReports, permissionActions.delete)
+    deleteAll(@Param("coffeeShopId") coffeeShopId: string) {
+        return this.service.deleteAllDailyReports(coffeeShopId);
     }
 }
