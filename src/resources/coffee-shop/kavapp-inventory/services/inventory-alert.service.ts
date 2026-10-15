@@ -9,7 +9,6 @@ import { isNumber, isString } from "../../../../common/utils/guards";
 import { formatNumber } from "../../../../common/utils/number";
 import { InventoryAlertRuleDocument } from "../inventory-alert-rule-schema";
 import { InventoryAlertRuleService } from "./inventory-alert-rule.service";
-import { inventoryAlertIgnoreNames } from "../constants/inventory-alert-rules";
 import { InventoryAlertState, inventoryAlertStates } from "../constants/alert-states";
 import { CoffeeShop } from "../../coffee-shop-schema";
 
@@ -39,12 +38,15 @@ export class InventoryAlertService {
 
         for (const item of currentItems) {
             const inventoryAlertRule = this.findInventoryAlertRule(item, rulesByKey, rulesByName);
+
+            if (inventoryAlertRule?.isIgnored) continue;
+
             const currentInventoryAlertState: InventoryAlertState = this.getState(
                 this.toQuantity(item.itemcount),
                 inventoryAlertRule,
             );
 
-            if (this.isNegativeInventoryAlert(item, currentInventoryAlertState)) {
+            if (currentInventoryAlertState === inventoryAlertStates.negative) {
                 negativeAlerts.push({ inventoryItem: item, inventoryAlertRule });
             } else if (currentInventoryAlertState === inventoryAlertStates.lowStock && inventoryAlertRule) {
                 lowStockAlerts.push({ inventoryItem: item, inventoryAlertRule });
@@ -64,16 +66,6 @@ export class InventoryAlertService {
         }
 
         await this.telegramService.sendMessage(chatId, message);
-    }
-
-    private isNegativeInventoryAlert(
-        inventoryItem: KavappInventoryItem,
-        inventoryAlertState: InventoryAlertState,
-    ) {
-        return (
-            inventoryAlertState === inventoryAlertStates.negative &&
-            !inventoryAlertIgnoreNames.has(inventoryItem.name)
-        );
     }
 
     private getAllInventoryItems(inventory: KavappInventoryResponse) {

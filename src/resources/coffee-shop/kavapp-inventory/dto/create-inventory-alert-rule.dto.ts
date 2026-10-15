@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min } from "class-validator";
 import { Type } from "class-transformer";
 import type { KavappInventoryItemType } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-item";
 
@@ -17,10 +17,16 @@ export class CreateInventoryAlertRuleDto {
     @IsString()
     unit?: string;
 
+    @IsOptional()
     @IsNumber()
     @Min(0)
     @Type(() => Number)
-    threshold!: number;
+    threshold?: number;
+
+    @IsOptional()
+    @IsBoolean()
+    @Type(() => Boolean)
+    isIgnored?: boolean;
 
     @IsOptional()
     @IsString()

@@ -33,8 +33,11 @@ export class InventoryAlertRule {
     @Prop({ required: false, default: "" })
     unit!: string;
 
-    @Prop({ required: true, min: 0, default: 0 })
+    @Prop({ required: false, min: 0, default: 0 })
     threshold!: number;
+
+    @Prop({ required: false, default: false })
+    isIgnored!: boolean;
 
     @Prop()
     description?: string;
