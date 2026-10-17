@@ -298,6 +298,15 @@ export class StatisticsService {
         let netProfit = 0;
 
         const employeeStats: Record<string, EmployeeStats> = {};
+        const employeeKavappStats: Record<
+            string,
+            {
+                kavappShifts: number;
+                totalChecks: number;
+                kavappRevenue: number;
+                totalItemsSold: number;
+            }
+        > = {};
 
         for (const report of dailyReports) {
             totalRevenue += report.totalRevenue ?? 0;
@@ -340,9 +349,25 @@ export class StatisticsService {
             employeeStats[employeeId].averageCostPercent += report.costPercent ?? 0;
             employeeStats[employeeId].averageWriteOffPercent += report.writeOffPercent ?? 0;
             employeeStats[employeeId].averageSalaryPercent += report.salaryPercent ?? 0;
+
+            if (report.kavappSales?.summary) {
+                if (!employeeKavappStats[employeeId]) {
+                    employeeKavappStats[employeeId] = {
+                        kavappShifts: 0,
+                        totalChecks: 0,
+                        kavappRevenue: 0,
+                        totalItemsSold: 0,
+                    };
+                }
+                employeeKavappStats[employeeId].kavappShifts += 1;
+                employeeKavappStats[employeeId].totalChecks += report.kavappSales.summary.totalChecks ?? 0;
+                employeeKavappStats[employeeId].kavappRevenue += report.kavappSales.summary.totalRevenue ?? 0;
+                employeeKavappStats[employeeId].totalItemsSold +=
+                    report.kavappSales.summary.totalItemsSold ?? 0;
+            }
         }
 
-        for (const stats of Object.values(employeeStats)) {
+        for (const [employeeId, stats] of Object.entries(employeeStats)) {
             if (stats.shifts > 0) {
                 stats.averageRevenuePerShift = round(stats.averageRevenuePerShift / stats.shifts);
                 stats.averageCashRevenuePercent = round(stats.averageCashRevenuePercent / stats.shifts);
@@ -353,6 +378,16 @@ export class StatisticsService {
                 stats.averageCostPercent = round(stats.averageCostPercent / stats.shifts);
                 stats.averageWriteOffPercent = round(stats.averageWriteOffPercent / stats.shifts);
                 stats.averageSalaryPercent = round(stats.averageSalaryPercent / stats.shifts);
+            }
+
+            const kavapp = employeeKavappStats[employeeId];
+            if (kavapp && kavapp.kavappShifts > 0) {
+                stats.averageChecksPerShift = round(kavapp.totalChecks / kavapp.kavappShifts);
+                stats.averageCheck =
+                    kavapp.totalChecks > 0 ? round(kavapp.kavappRevenue / kavapp.totalChecks) : 0;
+                stats.averageItemsSoldPerShift = round(kavapp.totalItemsSold / kavapp.kavappShifts);
+                stats.averageItemsPerCheck =
+                    kavapp.totalChecks > 0 ? round(kavapp.totalItemsSold / kavapp.totalChecks, 2) : 0;
             }
         }
 
@@ -523,6 +558,9 @@ export class StatisticsService {
     private calculateStatisticsHighlights(dailyReports: DailyReport[]) {
         if (!dailyReports || dailyReports.length <= 1) return undefined;
 
+        const kavappReports = dailyReports.filter((report) => report.kavappSales?.summary !== undefined);
+        const hasKavapp = kavappReports.length > 1;
+
         const statisticsHighlights: StatisticsHighlights = {
             revenue: this.findMetricHighlight(dailyReports, (report) => report.totalRevenue ?? 0),
             netProfit: this.findMetricHighlight(dailyReports, (report) => report.netProfit ?? 0),
@@ -530,6 +568,26 @@ export class StatisticsService {
             writeOffPercent: this.findMetricHighlight(dailyReports, (report) => report.writeOffPercent ?? 0),
             cashRevenue: this.findMetricHighlight(dailyReports, (report) => report.cashRevenue ?? 0),
             terminalRevenue: this.findMetricHighlight(dailyReports, (report) => report.terminalRevenue ?? 0),
+            ...(hasKavapp && {
+                checksCount: this.findMetricHighlight(
+                    kavappReports,
+                    (report) => report.kavappSales?.summary.totalChecks ?? 0,
+                ),
+                averageCheck: this.findMetricHighlight(
+                    kavappReports,
+                    (report) => report.kavappSales?.summary.averageCheck ?? 0,
+                ),
+                itemsSold: this.findMetricHighlight(
+                    kavappReports,
+                    (report) => report.kavappSales?.summary.totalItemsSold ?? 0,
+                ),
+                itemsPerCheck: this.findMetricHighlight(kavappReports, (report) => {
+                    const checks = report.kavappSales?.summary.totalChecks ?? 0;
+                    const items = report.kavappSales?.summary.totalItemsSold ?? 0;
+
+                    return checks > 0 ? items / checks : 0;
+                }),
+            }),
         };
 
         return statisticsHighlights;

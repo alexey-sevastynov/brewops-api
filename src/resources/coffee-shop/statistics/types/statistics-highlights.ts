@@ -5,6 +5,10 @@ export interface StatisticsHighlights {
     writeOffPercent: MetricHighlight;
     cashRevenue: MetricHighlight;
     terminalRevenue: MetricHighlight;
+    checksCount?: MetricHighlight;
+    averageCheck?: MetricHighlight;
+    itemsSold?: MetricHighlight;
+    itemsPerCheck?: MetricHighlight;
 }
 
 export interface MetricHighlight {

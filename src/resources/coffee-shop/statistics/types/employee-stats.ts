@@ -11,4 +11,8 @@ export interface EmployeeStats {
     averageCostPercent: number;
     averageWriteOffPercent: number;
     averageSalaryPercent: number;
+    averageChecksPerShift?: number;
+    averageCheck?: number;
+    averageItemsSoldPerShift?: number;
+    averageItemsPerCheck?: number;
 }
