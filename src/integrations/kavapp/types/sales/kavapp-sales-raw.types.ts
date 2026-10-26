@@ -141,6 +141,37 @@ export interface KavappWorkReportItem {
     [key: string]: unknown;
 }
 
+export interface KavappProfitReportItem {
+    sdtime?: string;
+    sdTimeUtc?: string;
+    edtime?: string;
+    edTimeUtc?: string;
+    idWork?: string;
+    salepointName?: string;
+    workerName?: string;
+    revenue?: string;
+    usedSum?: string;
+    profit?: string;
+    profitPercent?: string;
+}
+
+export interface KavappWriteOffReportItem {
+    id?: string;
+    salepoint?: string;
+    status?: string;
+    workerType?: string;
+    confirmerType?: string;
+    worker?: string;
+    confirmer?: string;
+    dtime?: string;
+    dtimeUtc?: string;
+    ltime?: string;
+    ltimeUtc?: string;
+    totalPrice?: string;
+    description?: string;
+    [key: string]: unknown;
+}
+
 export interface KavappDailySalesRaw {
     reportNew: KavappSaleItem[];
     avgReport: KavappAvgReportItem[];
@@ -153,4 +184,6 @@ export interface KavappDailySalesRaw {
     cardsList?: KavappCardItem[];
     promotionsList?: KavappPromotionItem[];
     workReport?: KavappWorkReportItem[];
+    profitReport?: KavappProfitReportItem[];
+    writeOffReport?: KavappWriteOffReportItem[];
 }

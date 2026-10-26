@@ -16,9 +16,11 @@ import {
     KavappDiscountReportItem,
     KavappFinanceReportItem,
     KavappHourlyReportItem,
+    KavappProfitReportItem,
     KavappPromotionItem,
     KavappSaleItem,
     KavappWorkReportItem,
+    KavappWriteOffReportItem,
 } from "../types/sales/kavapp-sales-raw.types";
 import { KavappAuthClient } from "./kavapp-auth.client";
 
@@ -62,6 +64,8 @@ export class KavappSalesClient {
                     cardsList,
                     promotionsList,
                     workReport,
+                    profitReport,
+                    writeOffReport,
                 ] = await Promise.all([
                     this.fetchReportNew(token, sdtime, edtime),
                     this.fetchAvgReport(token, sdtime, edtime),
@@ -74,6 +78,8 @@ export class KavappSalesClient {
                     this.fetchCards(token),
                     this.fetchPromotions(token),
                     this.fetchWorkReport(token, sdtime, edtime),
+                    this.fetchProfitReport(token, sdtime, edtime, activePointId),
+                    this.fetchWriteOffReport(token, sdtime, edtime, activePointId),
                 ]);
 
                 return {
@@ -88,6 +94,8 @@ export class KavappSalesClient {
                     cardsList: this.toArray(cardsList),
                     promotionsList: this.toArray(promotionsList),
                     workReport: this.toArray(workReport),
+                    profitReport: this.toArray(profitReport),
+                    writeOffReport: this.toArray(writeOffReport),
                 };
             });
         } catch (error) {
@@ -190,6 +198,28 @@ export class KavappSalesClient {
             sdtime,
             edtime,
         }).catch(() => []);
+    }
+
+    private fetchProfitReport(token: string, sdtime: string, edtime: string, pointId: string) {
+        return this.fetchSalesEndpoint<KavappProfitReportItem[]>(kavappEndpoints.sales.profit, token, {
+            idsalepoint: pointId,
+            dateRangePicker: { sdtime, edtime },
+            sdtime,
+            edtime,
+        }).catch(() => []);
+    }
+
+    private fetchWriteOffReport(token: string, sdtime: string, edtime: string, pointId: string) {
+        return this.fetchSalesEndpoint<KavappWriteOffReportItem[]>(
+            kavappEndpoints.sales.writeOffReport,
+            token,
+            {
+                idsalepoint: pointId,
+                dateRangePicker: { sdtime, edtime },
+                sdtime,
+                edtime,
+            },
+        ).catch(() => []);
     }
 
     private toArray<T>(value: T): T extends unknown[] ? T : never {

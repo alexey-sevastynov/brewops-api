@@ -6,6 +6,8 @@ interface KavappDailySalesSummary {
     cashTotal: number;
     terminalTotal: number;
     totalItemsSold: number;
+    costOfGoods?: number;
+    productWriteOffs?: number;
 }
 
 interface KavappHourlySalesAnalytics {

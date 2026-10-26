@@ -64,19 +64,13 @@ export class DailyReportService {
             }
         }
 
-        const effectiveReportInput = { ...createDailyReportDto };
-        if (kavappSales?.summary?.totalRevenue) {
-            effectiveReportInput.cashRevenue = kavappSales.summary.cashTotal;
-            effectiveReportInput.terminalRevenue = kavappSales.summary.terminalTotal;
-        }
-
         const calculatedDailyReportFields = this.getCalculatedDailyReportFields(
             employee,
-            effectiveReportInput,
+            createDailyReportDto,
         );
 
         const dailyReport = await new this.dailyModel({
-            ...effectiveReportInput,
+            ...createDailyReportDto,
             coffeeShopId,
             ...calculatedDailyReportFields,
             ...(kavappSales ? { kavappSales } : {}),
@@ -117,11 +111,6 @@ export class DailyReportService {
             }
         }
 
-        if (dailyModel.kavappSales?.summary?.totalRevenue) {
-            dailyModel.cashRevenue = dailyModel.kavappSales.summary.cashTotal;
-            dailyModel.terminalRevenue = dailyModel.kavappSales.summary.terminalTotal;
-        }
-
         Object.assign(dailyModel, this.getCalculatedDailyReportFields(employee, dailyModel));
 
         await dailyModel.save();
@@ -142,6 +131,28 @@ export class DailyReportService {
         const result = await this.dailyModel.deleteMany({ coffeeShopId });
 
         return { deletedCount: result.deletedCount };
+    }
+
+    async getKavappSyncValues(coffeeShopId: string, date: string | Date) {
+        if (!this.kavappSalesService) {
+            return null;
+        }
+
+        try {
+            const analytics = await this.kavappSalesService.getDailySalesAnalytics(coffeeShopId, date);
+
+            if (!analytics) return null;
+
+            return {
+                cashRevenue: analytics.summary?.cashTotal ?? 0,
+                terminalRevenue: analytics.summary?.terminalTotal ?? 0,
+                costOfGoods: analytics.summary?.costOfGoods ?? 0,
+                productWriteOffs: analytics.summary?.productWriteOffs ?? 0,
+            };
+        } catch (error) {
+            this.logger.error(`Failed to get Kavapp sync values: ${(error as Error).message}`);
+            return null;
+        }
     }
 
     private getCalculatedDailyReportFields(employee: Employee, dailyReportInput: DailyReportInput) {

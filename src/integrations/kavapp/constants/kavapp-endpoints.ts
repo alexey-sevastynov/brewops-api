@@ -17,5 +17,7 @@ export const kavappEndpoints = {
         card: "/card",
         promotion: "/promotion",
         workReport: "/workreport",
+        profit: "/profit",
+        writeOffReport: "/writeoffreport",
     },
 } as const;

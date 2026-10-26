@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Delete, Body, Param, UsePipes, ValidationPipe, Patch } from "@nestjs/common";
+import {
+    Controller,
+    Get,
+    Post,
+    Delete,
+    Body,
+    Param,
+    Query,
+    UsePipes,
+    ValidationPipe,
+    Patch,
+    NotFoundException,
+} from "@nestjs/common";
 import { TelegramNotify } from "../../../infra/telegram/telegram.decorator";
 import { telegramActions } from "../../../infra/telegram/constants";
 import { CheckPermission } from "../../../resources/auth/decorators/check-permission.decorator";
@@ -17,6 +29,18 @@ export class DailyReportController {
     @CheckPermission(resourceNames.dailyReports, permissionActions.read)
     findAll(@Param("coffeeShopId") coffeeShopId: string) {
         return this.service.findAllDailyReport(coffeeShopId);
+    }
+
+    @Get("sync-kavapp")
+    @CheckPermission(resourceNames.dailyReports, permissionActions.write)
+    async getKavappSyncValues(@Param("coffeeShopId") coffeeShopId: string, @Query("date") date: string) {
+        const syncValues = await this.service.getKavappSyncValues(coffeeShopId, date);
+
+        if (!syncValues) {
+            throw new NotFoundException("Kavapp integration is not configured or unavailable");
+        }
+
+        return syncValues;
     }
 
     @Get(":id")

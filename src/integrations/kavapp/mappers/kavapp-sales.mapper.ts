@@ -5,7 +5,9 @@ import type {
     KavappCheckItem,
     KavappDailySalesRaw,
     KavappHourlyReportItem,
+    KavappProfitReportItem,
     KavappWorkReportItem,
+    KavappWriteOffReportItem,
 } from "../types/sales/kavapp-sales-raw.types";
 import type {
     CashAuditSummary,
@@ -127,6 +129,8 @@ export class KavappSalesMapper {
         const totalChecks = completedChecks.length;
         const averageCheck = totalChecks > 0 ? paymentTotals.totalRevenue / totalChecks : 0;
         const totalItemsSold = this.sumBy(raw.reportNew, (item) => this.parseNumber(item.value, 1));
+        const costOfGoods = this.calculateCostOfGoods(raw.profitReport);
+        const productWriteOffs = this.calculateWriteOffs(raw.writeOffReport);
 
         return {
             totalChecks,
@@ -136,7 +140,25 @@ export class KavappSalesMapper {
             cashTotal: round(paymentTotals.cashTotal),
             terminalTotal: round(paymentTotals.terminalTotal),
             totalItemsSold,
+            costOfGoods: round(costOfGoods),
+            productWriteOffs: round(productWriteOffs),
         };
+    }
+
+    private static calculateCostOfGoods(profitReport?: KavappProfitReportItem[]): number {
+        if (!Array.isArray(profitReport) || !profitReport.length) return 0;
+
+        return this.sumBy(profitReport, (item) => this.parseNumber(item?.usedSum));
+    }
+
+    private static calculateWriteOffs(writeOffReport?: KavappWriteOffReportItem[]): number {
+        if (!Array.isArray(writeOffReport) || !writeOffReport.length) return 0;
+
+        const activeWriteOffs = writeOffReport.filter(
+            (item) => item && String(item.status) !== kavappCheckStatuses.cancelled,
+        );
+
+        return this.sumBy(activeWriteOffs, (item) => this.parseNumber(item?.totalPrice));
     }
 
     private static buildHourly(hourlyReport: KavappHourlyReportItem[]) {
