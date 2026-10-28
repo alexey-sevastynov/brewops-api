@@ -29,6 +29,9 @@ export class ExpenseReport {
 
     @Prop()
     description?: string;
+
+    @Prop()
+    receiptUrl?: string;
 }
 
 export const ExpenseReportSchema = SchemaFactory.createForClass(ExpenseReport);

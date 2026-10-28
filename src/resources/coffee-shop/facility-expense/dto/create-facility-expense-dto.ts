@@ -1,4 +1,4 @@
-import { IsDate, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsDate, IsNumber, IsOptional, IsString, IsUrl, ValidateIf } from "class-validator";
 import { Type } from "class-transformer";
 
 export class CreateFacilityExpenseDto {
@@ -19,4 +19,9 @@ export class CreateFacilityExpenseDto {
     @IsOptional()
     @IsString()
     description?: string;
+
+    @IsOptional()
+    @ValidateIf((o: CreateFacilityExpenseDto) => !!o.receiptUrl)
+    @IsUrl({ require_tld: false })
+    receiptUrl?: string;
 }

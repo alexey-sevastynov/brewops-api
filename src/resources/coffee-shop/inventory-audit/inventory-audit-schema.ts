@@ -27,6 +27,9 @@ export class InventoryAudit {
 
     @Prop()
     description?: string;
+
+    @Prop()
+    receiptUrl?: string;
 }
 
 export const InventoryAuditSchema = SchemaFactory.createForClass(InventoryAudit);

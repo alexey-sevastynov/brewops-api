@@ -16,10 +16,11 @@ export const formatExpenseReportMessage = () => (data: ExpenseReport) => {
                   : "";
 
     const description = data.description ? `\n\nℹ️ _Додаткова інформація: ${data.description}_` : "";
+    const receipt = data.receiptUrl ? `\n\n🧾 [Чек](${data.receiptUrl})` : "";
 
     return `📄 *Звіт про витрату*
 
 До обліку внесено витрату *«${data.title}»* на суму *${formatUah(data.amount)}*. Витрату віднесено до категорії *${expenseReportTypeLabels[data.type]}*.
 
-${period}${description}`;
+${period}${description}${receipt}`;
 };

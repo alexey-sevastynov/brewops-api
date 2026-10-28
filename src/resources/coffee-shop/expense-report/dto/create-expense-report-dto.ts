@@ -1,4 +1,4 @@
-import { IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
+import { IsEnum, IsNumber, IsOptional, IsString, IsUrl, ValidateIf } from "class-validator";
 import { expenseReportTypes, type ExpenseReportType } from "../enums/expense-report-type";
 
 export class CreateExpenseReportDto {
@@ -25,4 +25,9 @@ export class CreateExpenseReportDto {
 
     @IsOptional()
     note?: string;
+
+    @IsOptional()
+    @ValidateIf((o: CreateExpenseReportDto) => !!o.receiptUrl)
+    @IsUrl({ require_tld: false })
+    receiptUrl?: string;
 }

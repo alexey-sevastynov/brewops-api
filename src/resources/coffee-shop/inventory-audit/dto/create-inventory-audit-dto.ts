@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsDate, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsDate, IsNotEmpty, IsNumber, IsOptional, IsString, IsUrl, Min, ValidateIf } from "class-validator";
 
 export class CreateInventoryAuditDto {
     @IsString()
@@ -27,4 +27,9 @@ export class CreateInventoryAuditDto {
     @IsOptional()
     @IsString()
     description?: string;
+
+    @IsOptional()
+    @ValidateIf((o: CreateInventoryAuditDto) => !!o.receiptUrl)
+    @IsUrl({ require_tld: false })
+    receiptUrl?: string;
 }

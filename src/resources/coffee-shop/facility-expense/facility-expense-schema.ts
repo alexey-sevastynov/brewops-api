@@ -22,6 +22,9 @@ export class FacilityExpense {
 
     @Prop()
     description?: string;
+
+    @Prop()
+    receiptUrl?: string;
 }
 
 export const FacilityExpenseSchema = SchemaFactory.createForClass(FacilityExpense);
