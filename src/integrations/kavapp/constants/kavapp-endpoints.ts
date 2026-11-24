@@ -1,6 +1,7 @@
 export const kavappEndpoints = {
     login: "/admin/login",
     inventory: (pointId: string) => `/nowreport/${pointId}`,
+    prices: (pointId: string) => `/nowprice?id=${pointId}`,
     catalog: {
         product: "/product",
         cup: "/cup",

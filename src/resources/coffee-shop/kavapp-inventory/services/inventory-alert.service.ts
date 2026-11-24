@@ -4,7 +4,7 @@ import { Model } from "mongoose";
 import { TelegramService } from "../../../../infra/telegram/telegram.service";
 import { KavappInventoryItem } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-item";
 import { KavappInventoryResponse } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-response";
-import { kavappInventoryTypes } from "../../../../integrations/kavapp/constants/kavapp-inventory-types";
+import { kavappInventoryTypes } from "../../../../integrations/kavapp/constants/kavapp-inventory";
 import { isNumber, isString } from "../../../../common/utils/guards";
 import { formatNumber } from "../../../../common/utils/number";
 import { InventoryAlertRuleDocument } from "../inventory-alert-rule-schema";

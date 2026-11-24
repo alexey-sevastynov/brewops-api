@@ -10,7 +10,7 @@ import { kavappErrorMessages } from "../constants/kavapp-error-messages";
 import { kavappEndpoints } from "../constants/kavapp-endpoints";
 import { KavappAuthClient } from "./kavapp-auth.client";
 import { kavappDefaultValues } from "../constants/kavapp-default-values";
-import { kavappInventoryTypes } from "../constants/kavapp-inventory-types";
+import { kavappInventoryTypes } from "../constants/kavapp-inventory";
 
 @Injectable()
 export class KavappInventoryClient {

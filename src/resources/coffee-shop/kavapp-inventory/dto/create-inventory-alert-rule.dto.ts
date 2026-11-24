@@ -1,9 +1,10 @@
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, Min } from "class-validator";
 import { Type } from "class-transformer";
 import type { KavappInventoryItemType } from "../../../../integrations/kavapp/types/inventory/kavapp-inventory-item";
+import { kavappInventoryItemTypes } from "../../../../integrations/kavapp/constants/kavapp-inventory";
 
 export class CreateInventoryAlertRuleDto {
-    @IsEnum(["ingredient", "cup", "product", "kitchen"])
+    @IsEnum(kavappInventoryItemTypes)
     itemType!: KavappInventoryItemType;
 
     @IsString()
